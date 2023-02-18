@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="parameters" Id="{4cb41f38-e133-4596-b16c-0453ef326d7e}">
+    <Declaration><![CDATA[TYPE parameters :
+STRUCT
+END_STRUCT
+ parameterArray: ARRAY[0..18] OF ST_vaederdata;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

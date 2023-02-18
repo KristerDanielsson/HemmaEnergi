@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="SmartMeterValues" Id="{a2c2d7df-dd2d-40bd-ba69-01a6acb9aa11}">
+    <Declaration><![CDATA[TYPE SmartMeterValues :
+STRUCT
+	mac_address: STRING;
+	gateway_model: STRING;
+	startup_time:  STRING;
+    firmware_running: STRING;
+    firmware_available: STRING;
+    firmware_update_available: STRING;
+    wifi_rssi: STRING;
+    mqtt_configured: STRING;
+    mqtt_server: STRING;
+    blynk_configured: STRING;
+    Equipment_Id:STRING;
+    GasEquipment_Id:STRING;
+    ElectricityTariff:STRING;
+    EnergyDeliveredTariff1:STRING;
+    EnergyReturnedTariff1: STRING;
+    EnergyDeliveredTariff2: STRING;
+    EnergyReturnedTariff2: STRING;
+    EnergyDelivered: STRING;
+    EnergyReturned: STRING;
+    PowerDelivered_total:STRING;
+    PowerReturned_total: STRING;
+    PowerDelivered_l1: STRING;
+    PowerDelivered_l2: STRING;
+    PowerDelivered_l3: STRING;
+    PowerReturned_l1: STRING;
+    PowerReturned_l2: STRING;
+    PowerReturned_l3: STRING;
+    Voltage_l1: STRING;
+    Voltage_l2: STRING;
+    Voltage_l3: STRING;
+    Current_l1: STRING;
+    Current_l2: STRING;
+    Current_l3: STRING;
+    GasDelivered: STRING;
+    GasDeliveredHour: STRING;
+    PowerDeliveredHour: STRING;
+    PowerDeliveredNetto: STRING;
+
+	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

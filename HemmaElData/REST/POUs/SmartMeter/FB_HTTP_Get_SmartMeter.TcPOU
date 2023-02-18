@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_HTTP_Get_SmartMeter" Id="{10604ea1-d5d2-4f3e-b891-4dec4529946c}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_HTTP_Get_SmartMeter
+VAR_INPUT
+	bSend				: BOOL;
+END_VAR
+VAR_IN_OUT
+	fbClient			: FB_IotHttpClient;
+END_VAR
+VAR_OUTPUT
+	bBusy				: BOOL;
+	bError				: BOOL;
+END_VAR
+VAR
+	fbRequest			: FB_IotHttpRequest;
+	fbJson				: FB_JsonDomParser;
+	
+		fbJsonDataType	: FB_JsonReadWriteDataType;
+		felkod			: HRESULT;			
+	pContent: PVOID;
+	nState				: UDINT;
+	RisingEdge			: R_TRIG;
+	
+	bGetContentResult	: BOOL;
+	sContent			: STRING(1100);
+	
+	bGetJsonResult		: BOOL;
+	jsonDoc				: SJsonValue;
+	jsonVal				: SJsonValue;
+	sResultValue		: STRING;
+	
+	nReqCount			: UDINT;	
+	nResCount			: UDINT;
+	nValidResCount		: UDINT;
+	nErrCount			: UDINT;
+	Vaerde: LINT;
+	Energi: REAL;
+	Energilaegsta: REAL :=100000.0 ;
+	Energihoegsta: REAL;
+	Funkar: BOOL;
+	nisse: INT;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[RisingEdge(CLK:= bSend );
+CASE nState OF
+0:	
+	IF RisingEdge.Q THEN 
+		IF Funkar:= fbRequest.SendRequest(sUri:='/smartmeter/api/read', fbClient:=fbClient, eRequestType:=ETcIotHttpRequestType.HTTP_Get, 0, 0, 0) THEN				
+		
+		nState:= 1;
+			nReqCount:= nReqCount+1;
+			bBusy:= TRUE;
+			bError:= FALSE;
+		END_IF					
+	END_IF
+1:
+	IF NOT fbRequest.bBusy THEN
+		bError:= TRUE;
+		IF NOT fbRequest.bError THEN	
+			
+nisse:=nisse+1;
+			
+//Hämta data från mätarens HTTP REST API och lägg i string
+			bGetContentResult:= fbRequest.GetContent(pContent:= ADR(sContent), nContentSize:= SIZEOF(sContent), bSetNullTermination:= TRUE);
+			
+			
+			IF fbRequest.nStatusCode >= 200 AND fbRequest.nStatusCode < 300 THEN
+				bGetJsonResult:= FALSE;
+			
+			//Kopiera hela den importerade JSON-formaterade datasträngen och lägg i en motsvarande TwinCAT-struktur
+			IF fbJsonDataType.SetSymbolFromJson(sContent, 'SmartMeterValues', SIZEOF(GVL.stSmartDataMomentan), ADR(GVL.stSmartDataMomentan), hrErrorCode=> felkod) THEN
+						bError:= FALSE;
+					END_IF	
+			
+			IF felkod = 0 THEN
+				Energi := STRING_TO_REAL(GVL.stSmartDataMomentan.PowerDelivered_total);
+				
+				IF Energilaegsta> Energi THEN 	
+				Energilaegsta:=Energi;
+				END_IF
+			
+				IF Energihoegsta< Energi THEN 	
+				Energihoegsta:=Energi;
+				END_IF
+				
+			END_IF
+
+			
+				nResCount:= nResCount+1;			
+			END_IF
+		END_IF
+		nState:= 0;
+		bBusy:= FALSE;
+		IF bError THEN
+			nErrCount:= nErrCount+1;
+		END_IF
+	END_IF  	
+END_CASE
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

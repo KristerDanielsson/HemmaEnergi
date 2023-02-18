@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="GVL_SMHI" Id="{3627a765-2bc3-4b37-8c20-b2b4e4c8ae64}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL
+	timeseries: ARRAY[0..100] OF ST_SMHITimeseries;
+	
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="MAIN" Id="{a63c016d-aee5-4cd2-ac08-aa91d3539309}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	// trigger command execution for Postman-Echo samples
+	bGet, bPost, bPut, bHeaderAuth 	: BOOL;
+
+	fbHttpClientElpris				: FB_IotHttpClient :=(sHostName:='https://www.elprisetjustnu.se:443/api',
+								  	bKeepAlive:=TRUE, tConnectionTimeout:=T#10S);
+								
+	fbHttpGet						: FB_TestHTTP_Get_Elpris;
+	
+	bGetPris: BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// init client parameters at startup
+IF NOT fbHttpClientElpris.bConfigured THEN 
+	fbHttpClientElpris.nHostPort:= 443;
+END_IF
+
+IF fbHttpClientElpris.bConfigured THEN 
+	fbHttpGet(bSend:=bGet, fbClient:=fbHttpClientElpris);
+	
+END_IF 
+
+fbHttpClientElpris.Execute();]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

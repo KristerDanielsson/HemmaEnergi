@@ -1,0 +1,132 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_HTTP_Get_Elpris" Id="{f266cfe8-b744-4fee-93c9-afadbb6020cc}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_HTTP_Get_Elpris
+VAR_INPUT
+	bSend				: BOOL;
+END_VAR
+VAR_IN_OUT
+	fbClient			: FB_IotHttpClient;
+END_VAR
+VAR_OUTPUT
+	bBusy				: BOOL;
+	bError				: BOOL;
+END_VAR
+VAR
+	
+	fbRequest			: FB_IotHttpRequest;
+
+	fbJson				: FB_JsonDomParser;
+	
+		fbJsonDataType	: FB_JsonReadWriteDataType;
+		felkod			: HRESULT;			
+	pContent: PVOID;
+	nState				: UDINT;
+	RisingEdge			: R_TRIG;
+	
+	bGetContentResult	: BOOL;
+	sContent			: STRING(5000);
+	
+	bGetJsonResult		: BOOL;
+	jsonDoc				: SJsonValue;
+	jsonVal				: SJsonValue;
+	sResultValue		: STRING;
+	
+	nReqCount			: UDINT;	
+	nResCount			: UDINT;
+	nValidResCount		: UDINT;
+	nErrCount			: UDINT;
+	Vaerde: LINT;
+	Energi: REAL;
+	Energilaegsta: REAL :=100000.0 ;
+	Energihoegsta: REAL;
+	n: INT;
+	Funkar: BOOL;
+	nisse: INT;
+	kod1: UINT;
+	kod2: UINT;
+	Location: STRING(200);
+	
+	
+	storlek: UINT;
+	storleken: UDINT;
+	nIndex: UDINT;
+	nSize: UDINT;
+	sJsonArrayIndex: Sjsonvalue;
+	
+	sJsonArray			:SJsonValue;
+
+	SCopiedJson: STRING(200);
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[RisingEdge(CLK:= bSend );
+CASE nState OF
+0:	
+	IF RisingEdge.Q THEN 
+		 
+				
+		IF fbRequest.SendRequest(sUri:='/api/v1/prices/2023/02-14_SE4.json', fbClient:=fbClient, eRequestType:=ETcIotHttpRequestType.HTTP_GET, 0, 0, 0) THEN
+		
+			nState:= 1;
+			nReqCount:= nReqCount+1;
+			bBusy:= TRUE;
+			bError:= FALSE;
+		END_IF					
+	END_IF
+1:
+	IF NOT fbRequest.bBusy THEN
+		nisse:=nisse+1;
+			fbRequest.GetHeaderField(sField:='Location',pValue:=ADR(Location),nValueSize:= SIZEOF(Location));
+		kod1:=fbRequest.nStatusCode;
+		bError:= TRUE;
+		IF NOT fbRequest.bError THEN	
+			//Hämta data och lägg i string
+		
+		
+		
+			bGetContentResult:= fbRequest.GetContent(pContent:= ADR(sContent), nContentSize:= SIZEOF(sContent), bSetNullTermination:= TRUE);
+		
+			storleken:=fbRequest.nContentSize;
+			
+			IF fbRequest.nStatusCode >= 200 AND fbRequest.nStatusCode < 300 THEN
+				bGetJsonResult:= FALSE;
+				jsonDoc:= fbRequest.GetJsonDomContent(fbJson);
+				IF jsonDoc <> 0 THEN
+					bGetJsonResult:= TRUE;
+					
+					//sJsonArray:=fbJson.FindMember(jsonDoc, 'timeSeries');
+				
+					nSize:= LIMIT(1, fbJson.GetArraySize(jsonDoc), 100);
+					
+					FOR nIndex:= 0 TO (nSize-1) DO
+						
+						sJsonArrayIndex:= fbJson.GetArrayValueByIdx(jsonDoc, nIndex);
+						
+						fbJson.CopyJson(sJsonArrayIndex, SCopiedJson, SIZEOF(SCopiedJson));
+						
+						fbJsonDataType.SetSymbolFromJson(sCopiedJson, 'ST_elpriserTimme', SIZEOF(GVL.elpriserTimme[nIndex]), ADR(GVL.elpriserTimme[nIndex]));
+												
+					END_FOR
+				
+			(*	
+				//Kopiera hela den importerade JSON-formaterade datasträngen och lägg i en motsvarande TwinCAT-struktur
+				IF fbJsonDataType.SetSymbolFromJson(sContent, 'ST_elpriserJustNu24Timmar', SIZEOF(GVL.elpriserTimme), ADR(GVL.elpriserTimme), hrErrorCode=> felkod) THEN
+						bError:= FALSE;
+				END_IF	
+		*)
+		
+				nResCount:= nResCount+1;			
+			END_IF
+		END_IF
+		nState:= 0;
+		bBusy:= FALSE;
+		IF bError THEN
+			nErrCount:= nErrCount+1;
+		END_IF
+	END_IF  
+END_IF	
+END_CASE
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

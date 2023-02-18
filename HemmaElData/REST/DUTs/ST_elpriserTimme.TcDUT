@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_elpriserTimme" Id="{2cea369c-0619-4573-b098-86de5e62e472}">
+    <Declaration><![CDATA[TYPE ST_elpriserTimme :
+STRUCT
+	SEK_per_kWh: REAL;
+    EUR_per_kWh: REAL;
+    EXR: REAL;
+    time_start: DATE_AND_TIME;
+    time_end: DATE_AND_TIME;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

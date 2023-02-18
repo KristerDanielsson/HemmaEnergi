@@ -1,0 +1,123 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_HTTP_Get_SMHI" Id="{e1adbb1e-efc6-4759-9d57-e00898d571fb}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_HTTP_Get_SMHI
+VAR_INPUT
+	bSend				: BOOL;
+END_VAR
+VAR_IN_OUT
+	fbClient			: FB_IotHttpClient;
+END_VAR
+VAR_OUTPUT
+	bBusy				: BOOL;
+	bError				: BOOL;
+END_VAR
+VAR
+	fbRequest			: FB_IotHttpRequest;
+	;
+	fbJson				: FB_JsonDomParser;
+
+		fbJsonDataType	: FB_JsonReadWriteDataType;
+		felkod			: HRESULT;			
+	pContent: PVOID;
+	nState				: UDINT;
+	RisingEdge			: R_TRIG;
+	
+	bGetContentResult	: BOOL;
+	sContent			: STRING(150000);
+	
+	bGetJsonResult		: BOOL;
+	jsonDoc				: SJsonValue;
+	jsonVal				: SJsonValue;
+	sJsonArray			:SJsonValue;
+	sJsonArrayIndex		: SJsonValue;
+	
+	sResultValue		: STRING;
+	
+	nReqCount			: UDINT;	
+	nResCount			: UDINT;
+	nValidResCount		: UDINT;
+	nErrCount			: UDINT;
+	Vaerde: LINT;
+	Energi: REAL;
+	Energilaegsta: REAL :=100000.0 ;
+	Energihoegsta: REAL;
+	n: INT;
+	Funkar: BOOL;
+	nisse: UDINT;
+	nSize: UDINT;
+	i: INT;
+	
+	nIndex: UDINT;
+	SCopiedJson: STRING(6000);
+	storlek: UINT;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[RisingEdge(CLK:= bSend );
+CASE nState OF
+0:	
+	IF RisingEdge.Q THEN 
+		//hämtar väderdata för Glumslöv
+		IF Funkar:= fbRequest.SendRequest(sUri:='/api/category/pmp3g/version/2/geotype/point/lon/12.809493/lat/55.937773/data.json', fbClient:=fbClient, eRequestType:=ETcIotHttpRequestType.HTTP_GET, 0, 0, 0) THEN				
+
+	
+
+		nState:= 1;
+			nReqCount:= nReqCount+1;
+			bBusy:= TRUE;
+			bError:= FALSE;
+		END_IF					
+	END_IF
+1:
+	IF NOT fbRequest.bBusy THEN
+		bError:= TRUE;
+		IF NOT fbRequest.bError THEN	
+		bGetContentResult:= fbRequest.GetContent(pContent:= ADR(sContent), nContentSize:= SIZEOF(sContent), bSetNullTermination:= TRUE);
+		nisse:= fbRequest.nContentSize;
+		
+			IF fbRequest.nStatusCode >= 200 AND fbRequest.nStatusCode < 300 THEN
+				bGetJsonResult:= FALSE;
+				jsonDoc:= fbRequest.GetJsonDomContent(fbJson);
+				IF jsonDoc <> 0 THEN
+					bGetJsonResult:= TRUE;
+					
+					sJsonArray:=fbJson.FindMember(jsonDoc, 'timeSeries');
+					
+					nSize:= LIMIT(1, fbJson.GetArraySize(sJsonArray), 100);
+					
+					FOR nIndex:= 0 TO (nSize-1) DO
+						sJsonArrayIndex:= fbJson.GetArrayValueByIdx(sJsonArray, nIndex);
+						fbJson.CopyJson(sJsonArrayIndex, SCopiedJson, SIZEOF(SCopiedJson));
+						fbJsonDataType.SetSymbolFromJson(sCopiedJson, 'ST_SMHITimeseries', SIZEOF(GVL_SMHI.timeseries[nIndex]), ADR(GVL_SMHI.timeseries[nIndex]));
+												
+					END_FOR
+					//nSize:= LIMIT(
+					
+					
+				(*	IF fbJson.HasMember(jsonDoc, 'args')  THEN
+						jsonVal:= fbJson.FindMember(jsonDoc, 'args');
+						IF fbJson.HasMember(jsonVal, 'foo2')  THEN
+							jsonVal:= fbJson.FindMember(jsonVal, 'foo2');
+							nValidResCount:= nValidResCount+1;
+							bError:= FALSE;						
+							IF fbJson.IsString(jsonVal) THEN							
+								sResultValue:= fbJson.GetString(jsonVal);									
+							END_IF
+						END_IF		
+					END_IF *)
+					
+				END_IF	
+				nResCount:= nResCount+1;			
+			END_IF
+		END_IF
+		nState:= 0;
+		bBusy:= FALSE;
+		IF bError THEN
+			nErrCount:= nErrCount+1;
+		END_IF
+	END_IF  	
+END_CASE
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="MAIN" Id="{b37e2b32-48ef-44fd-8d39-b46780530972}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	// trigger command execution for Postman-Echo samples
+	bGet, bGetPris, bPost, bPut, bHeaderAuth 	: BOOL;
+
+	fbHttpClientSmartMeter			: FB_IotHttpClient :=(sHostName:='connectix_smartmeter.local',
+								  	bKeepAlive:=TRUE, tConnectionTimeout:=T#20S);
+		
+	fbHttpClientElpriset			: FB_IotHttpClient :=(sHostName:='elprisetjustnu.se',
+	
+								  	bKeepAlive:=TRUE, tConnectionTimeout:=T#5S);
+									
+	fbHttpClientSMHI			: FB_IotHttpClient :=(sHostName:='opendata-download-metfcst.smhi.se',
+								  	bKeepAlive:=FALSE, tConnectionTimeout:=T#10S);
+
+	fbHttpGet						: FB_HTTP_Get_SmartMeter;
+	fbHttpGetElpriset				: FB_HTTP_Get_Elpris;
+	fbHttpGetSMHI				: FB_HTTP_Get_SMHI;
+
+	bGetSMHI: BOOL;
+	samladataIntervall: TON;
+
+	
+	trigger: BOOL;
+	loggadata: BOOL;
+	tid: TIME;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+//SmartMeter
+
+// init client parameters at startup
+IF NOT fbHttpClientSmartMeter.bConfigured THEN 
+	fbHttpClientSmartMeter.nHostPort:= 82;
+END_IF
+
+
+
+fbHttpClientSmartMeter.Execute();
+
+/////////////////////////////////////////////
+//Elpriser 
+
+// init client parameters at startup
+IF NOT fbHttpClientElpriset.bConfigured THEN 
+	//fbHttpClientElpriset.nHostPort:= 443;
+	fbHttpClientElpriset.stTLS.sVersion:='tlsv1.3';
+	
+
+	
+	
+END_IF
+IF fbHttpClientElpriset.bConfigured THEN 
+	fbHttpGetElpriset(bSend:=bGetPris, fbClient:=fbHttpClientElpriset);
+END_IF 
+
+fbHttpClientElpriset.Execute();
+
+/////////////////////////////////////////////
+//SMHI
+
+// init client parameters at startup
+IF NOT fbHttpClientSMHI.bConfigured THEN 
+	fbHttpClientSMHI.nHostPort:= 80;
+	
+	
+END_IF
+IF fbHttpClientSMHI.bConfigured THEN 
+	fbHttpGetSMHI(bSend:=bGetSMHI, fbClient:=fbHttpClientSMHI);
+END_IF 
+
+fbHttpClientSMHI.Execute();
+
+	samladataIntervall(IN:=trigger, PT:=  T#10S, Q=> loggadata, ET=>tid);
+	IF loggadata THEN
+			trigger:=FALSE;
+			IF fbHttpClientSmartMeter.bConfigured THEN 
+				fbHttpGet(bSend:=bGet, fbClient:=fbHttpClientSmartMeter);
+			END_IF
+			
+	ELSE
+				trigger:=TRUE;
+	END_IF
+
+
+
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>
