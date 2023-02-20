@@ -6,7 +6,7 @@ VAR
 	// trigger command execution for Postman-Echo samples
 	bGet, bGetPris, bPost, bPut, bHeaderAuth 	: BOOL;
 
-	fbHttpClientSmartMeter			: FB_IotHttpClient :=(sHostName:='connectix_smartmeter.local',
+	fbHttpClientSmartMeter			: FB_IotHttpClient :=(sHostName:='192.168.68.61',   //connectix_smartmeter.local
 								  	bKeepAlive:=TRUE, tConnectionTimeout:=T#20S);
 		
 	fbHttpClientElpriset			: FB_IotHttpClient :=(sHostName:='elprisetjustnu.se',
@@ -26,21 +26,47 @@ VAR
 	
 	trigger: BOOL;
 	loggadata: BOOL;
-	tid: TIME;
+	raeknartid: TIME;
+	systemtid: DT;
+	nisse: INT;
+	
+//fbSystemTimeToFileTime: 	SYSTEMTIME_TO_FILETIME;
+
+			 fbGetsytstemtime: GETSYSTEMTIME;
+	 filetime: T_FILETIME;
+	
+	
+	bGetSmartMeter: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-//SmartMeter
+fbGetsytstemtime(timeLoDW=> filetime.dwLowDateTime, timeHiDW=> filetime.dwHighDateTime);
+systemtid:= FILETIME_TO_DT(filetime);
+
+//SmartMeter, hämta data en gång per 10sekunder
 
 // init client parameters at startup
 IF NOT fbHttpClientSmartMeter.bConfigured THEN 
 	fbHttpClientSmartMeter.nHostPort:= 82;
 END_IF
 
-
-
 fbHttpClientSmartMeter.Execute();
+
+samladataIntervall(IN:=trigger, PT:=  T#10S, Q=>bGetSmartMeter ,ET=> raeknartid);
+IF samladataIntervall.Q THEN
+	nisse:=nisse+1;			
+	trigger:=FALSE;			
+ELSE
+		trigger:=TRUE;
+END_IF
+
+IF fbHttpClientSmartMeter.bConfigured THEN 
+		fbHttpGet(bSend:=bGetSmartMeter, fbClient:=fbHttpClientSmartMeter);
+END_IF
+
+
+
 
 /////////////////////////////////////////////
 //Elpriser 
@@ -75,16 +101,9 @@ END_IF
 
 fbHttpClientSMHI.Execute();
 
-	samladataIntervall(IN:=trigger, PT:=  T#10S, Q=> loggadata, ET=>tid);
-	IF loggadata THEN
-			trigger:=FALSE;
-			IF fbHttpClientSmartMeter.bConfigured THEN 
-				fbHttpGet(bSend:=bGet, fbClient:=fbHttpClientSmartMeter);
-			END_IF
-			
-	ELSE
-				trigger:=TRUE;
-	END_IF
+
+
+	
 
 
 

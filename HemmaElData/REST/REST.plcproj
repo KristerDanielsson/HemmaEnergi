@@ -17,6 +17,9 @@
     <LibraryReferences>{47ce852c-0293-4042-81d9-b9764c926ecc}</LibraryReferences>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="DUTs\ST_timData.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DUTs\ST_elpriserTimme.TcDUT">
       <SubType>Code</SubType>
     </Compile>
@@ -35,6 +38,9 @@
     <Compile Include="DUTs\ST_vaederdata.TcDUT">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="DUTs\ST_systemtid.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="GVLs\GVL.TcGVL">
       <SubType>Code</SubType>
       <LinkAlways>true</LinkAlways>
@@ -49,6 +55,9 @@
     <Compile Include="POUs\MAIN.TcPOU">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="POUs\SmartMeter\BraAttHa.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="POUs\SmartMeter\FB_HTTP_Get_SmartMeter.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -56,6 +65,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\SmartMeter\FB_HTTP_Get_SMHI.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="POUs\SmartMeter\FB_uppdateraTimData.TcPOU">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="BraAttHa" Id="{de115610-19ec-4aec-809c-058bd69aa67c}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK BraAttHa
+VAR_INPUT
+END_VAR
+VAR_OUTPUT
+END_VAR
+VAR
+	//eWriteState: (FILE_OPEN_TRIGGER,FILE_OPEN, WAIT_FOR_EVENT, WRITE_EVENT_TRIGGER,WRITE_EVENT, FILE_CLOSE_TRIGGER, FILE_CLOSE, ERROR);
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

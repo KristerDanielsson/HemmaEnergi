@@ -35,14 +35,26 @@ VAR
 	nValidResCount		: UDINT;
 	nErrCount			: UDINT;
 	Vaerde: LINT;
-	Energi: REAL;
-	Energilaegsta: REAL :=100000.0 ;
-	Energihoegsta: REAL;
+	
+	nettoEffekt: REAL;
+	SaaldEffekt: REAL;
+	KoeptEffekt: REAL;
+
+	Effektlaegsta: REAL :=100000.0 ;
+	Effekthoegsta: REAL;
+	NettoEnergiAccumulerat: REAL;
+	SaaldEnergiAccumulerat: REAL;
+	KoeptEnergiAccumulerat: REAL;
+
 	Funkar: BOOL;
 	nisse: INT;
+
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[RisingEdge(CLK:= bSend );
+
+
+
 CASE nState OF
 0:	
 	IF RisingEdge.Q THEN 
@@ -55,11 +67,12 @@ CASE nState OF
 		END_IF					
 	END_IF
 1:
+
 	IF NOT fbRequest.bBusy THEN
 		bError:= TRUE;
 		IF NOT fbRequest.bError THEN	
 			
-nisse:=nisse+1;
+
 			
 //Hämta data från mätarens HTTP REST API och lägg i string
 			bGetContentResult:= fbRequest.GetContent(pContent:= ADR(sContent), nContentSize:= SIZEOF(sContent), bSetNullTermination:= TRUE);
@@ -73,15 +86,24 @@ nisse:=nisse+1;
 						bError:= FALSE;
 					END_IF	
 			
+			//räkna ut lägsta och högsta effekt
 			IF felkod = 0 THEN
-				Energi := STRING_TO_REAL(GVL.stSmartDataMomentan.PowerDelivered_total);
+					
+				nettoEffekt := STRING_TO_REAL(GVL.stSmartDataMomentan.PowerDeliveredNetto);
+				SaaldEffekt:= STRING_TO_REAL(GVL.stSmartDataMomentan.PowerReturned_total);
+				KoeptEffekt := STRING_TO_REAL(GVL.stSmartDataMomentan.PowerDelivered_total);
 				
-				IF Energilaegsta> Energi THEN 	
-				Energilaegsta:=Energi;
+				NettoEnergiAccumulerat:= NettoEnergiAccumulerat+ (nettoEffekt/360000);
+				SaaldEnergiAccumulerat:= SaaldEnergiAccumulerat+ (SaaldEffekt/360000);
+				KoeptEnergiAccumulerat:= KoeptEnergiAccumulerat+(KoeptEffekt/360000);
+				
+				
+				IF Effektlaegsta> nettoEffekt THEN 	
+				effektlaegsta:=nettoEffekt;
 				END_IF
 			
-				IF Energihoegsta< Energi THEN 	
-				Energihoegsta:=Energi;
+				IF Effekthoegsta< nettoEffekt THEN 	
+				Effekthoegsta:=nettoEffekt;
 				END_IF
 				
 			END_IF
@@ -90,6 +112,7 @@ nisse:=nisse+1;
 				nResCount:= nResCount+1;			
 			END_IF
 		END_IF
+			nisse:=nisse+1;
 		nState:= 0;
 		bBusy:= FALSE;
 		IF bError THEN

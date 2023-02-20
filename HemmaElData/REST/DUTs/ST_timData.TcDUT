@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_timData" Id="{89f4f7a9-5afd-4ba8-aac7-dc6738e55e4e}">
+    <Declaration><![CDATA[TYPE ST_timData :
+STRUCT
+	DatumTid	: DT;		
+	timPris		:	REAL;	//inklusive moms
+
+//Energi
+	nettoEnergi	: REAL;	//kWh
+	saalEnergi	: REAL;	//kWh
+	KoeptEnergi	: REAL; //kWh
+
+//Effekt topp och botten
+	toppNettoEffekt	: 		REAL; 	//kW
+	laegstaNettoEffekt: 	REAL;	//kW
+	leagsaSolEffekt:	REAL;	//kW
+	hoegstaSolEffekt:	REAL;	//kW
+	
+//Ekonomi
+	avbetalningSolceller	: 	REAL; 	//kr -besparing och såld el
+	sparatSolceller		:	REAL; 	//kr -solel till hushållet
+	saaltSolceller 		: 	REAL; 	//kr -spotpris plus 60 öre skatteavdrag
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

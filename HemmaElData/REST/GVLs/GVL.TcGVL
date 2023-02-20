@@ -4,7 +4,8 @@
     <Declaration><![CDATA[{attribute 'qualified_only'}
 VAR_GLOBAL
 	stSmartDataMomentan: SmartMeterValues;
-	elpriserTimme: ARRAY[0..23] OF ST_elpriserTimme;
+	elpriserTimme: ARRAY[0..23] OF ST_elpriserTimme; //från elpriserjustnu.se
+	timData: ARRAY[0..87600] OF ST_timData;
 END_VAR]]></Declaration>
   </GVL>
 </TcPlcObject>
