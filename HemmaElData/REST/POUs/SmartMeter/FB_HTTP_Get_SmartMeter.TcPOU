@@ -94,11 +94,12 @@ CASE nState OF
 				SaaldEffekt:= STRING_TO_REAL(GVL.stSmartDataMomentan.PowerReturned_total);
 				KoeptEffekt := STRING_TO_REAL(GVL.stSmartDataMomentan.PowerDelivered_total);
 				nettoEffekt:= KoeptEffekt-SaaldEffekt;
-				
+			END_IF	
+			
 				//skriv in i Struct
-				timDataMomentan.nettoEnergi:= NettoEnergiAccumulerat+ (nettoEffekt/360000);
-				timDataMomentan.saaldEnergi:= SaaldEnergiAccumulerat+ (SaaldEffekt/360000);
-				timDataMomentan.KoeptEnergi:= KoeptEnergiAccumulerat+(KoeptEffekt/360000);
+				timDataMomentan.nettoEnergi:= timDataMomentan.nettoEnergi+ (nettoEffekt/144);
+				timDataMomentan.saaldEnergi:= timDataMomentan.saaldEnergi+ (SaaldEffekt/144);
+				timDataMomentan.KoeptEnergi:= timDataMomentan.KoeptEnergi+(KoeptEffekt/144);
 				
 				
 				IF timDataMomentan.laegstaNettoEffekt> nettoEffekt THEN 	
@@ -109,7 +110,7 @@ CASE nState OF
 				timDataMomentan.toppNettoEffekt:=nettoEffekt;
 				END_IF
 				
-			END_IF
+	
 
 			
 				nResCount:= nResCount+1;			
