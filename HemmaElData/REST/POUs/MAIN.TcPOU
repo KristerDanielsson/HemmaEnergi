@@ -4,7 +4,7 @@
     <Declaration><![CDATA[PROGRAM MAIN
 VAR
 	// trigger command execution for Postman-Echo samples
-	bGet, bGetPris, bPost, bPut, bHeaderAuth 	: BOOL;
+		bGetSmartMeter, bGetPris,bGetSMHI	: BOOL;
 
 	fbHttpClientSmartMeter			: FB_IotHttpClient :=(sHostName:='192.168.68.61',   //connectix_smartmeter.local
 								  	bKeepAlive:=TRUE, tConnectionTimeout:=T#20S);
@@ -19,30 +19,27 @@ VAR
 	fbHttpGet						: FB_HTTP_Get_SmartMeter;
 	fbHttpGetElpriset				: FB_HTTP_Get_Elpris;
 	fbHttpGetSMHI				: FB_HTTP_Get_SMHI;
+	
+	fbUppdateraTimData: FB_uppdateraTimData;
+	timDataMomentan:ST_timData;
 
-	bGetSMHI: BOOL;
 	samladataIntervall: TON;
 
 	
 	trigger: BOOL;
 	loggadata: BOOL;
 	raeknartid: TIME;
-	systemtid: DT;
+
 	nisse: INT;
 	
-//fbSystemTimeToFileTime: 	SYSTEMTIME_TO_FILETIME;
 
-			 fbGetsytstemtime: GETSYSTEMTIME;
-	 filetime: T_FILETIME;
-	
-	
-	bGetSmartMeter: BOOL;
+
+	tidDataMomentan: POINTER TO ST_timData;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-fbGetsytstemtime(timeLoDW=> filetime.dwLowDateTime, timeHiDW=> filetime.dwHighDateTime);
-systemtid:= FILETIME_TO_DT(filetime);
+
 
 //SmartMeter, hämta data en gång per 10sekunder
 
@@ -62,7 +59,7 @@ ELSE
 END_IF
 
 IF fbHttpClientSmartMeter.bConfigured THEN 
-		fbHttpGet(bSend:=bGetSmartMeter, fbClient:=fbHttpClientSmartMeter);
+		fbHttpGet(timDataMomentan:=timDataMomentan,bSend:=bGetSmartMeter, fbClient:=fbHttpClientSmartMeter);
 END_IF
 
 
@@ -100,6 +97,8 @@ IF fbHttpClientSMHI.bConfigured THEN
 END_IF 
 
 fbHttpClientSMHI.Execute();
+
+fbUppdateraTimData(timDataMomentan:=timDataMomentan);
 
 
 

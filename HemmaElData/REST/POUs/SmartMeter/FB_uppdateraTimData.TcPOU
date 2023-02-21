@@ -3,14 +3,109 @@
   <POU Name="FB_uppdateraTimData" Id="{4ff69180-a805-4dbf-b9fc-9e22289621be}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_uppdateraTimData
 VAR_INPUT
+	timDataMomentan:REFERENCE TO ST_timData;
+	
 END_VAR
-VAR_OUTPUT
-END_VAR
+
+
 VAR
+		systemtid: DT;
+	fbGetsytstemtime: GETSYSTEMTIME;
+	filetime: T_FILETIME;
+
+	timme: INT;
+	TIMEvaerde: TIME;
+	TODvaerde: TIME_OF_DAY;
+	stringTid: STRING;
+	stringTimme: STRING(255);
+	timmeloggad: INT;
+	timIndex: INT;
+	nisse: INT;
+
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[]]></ST>
+      <ST><![CDATA[
+//Hämta och manipulera tid
+HaemtaOchManipuleraTider();
+
+IF timme <> timmeloggad THEN
+	timmeloggad:=timme;
+	LoggaTimData();
+	NollstaellAccumuleradeTimData();
+	nisse:=nisse+1;
+END_IF
+
+
+
+
+
+
+]]></ST>
     </Implementation>
+    <Method Name="HaemtaOchManipuleraTider" Id="{c5c0a27f-4ae9-4949-8126-d40f2dbc816a}">
+      <Declaration><![CDATA[METHOD HaemtaOchManipuleraTider : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[fbGetsytstemtime(timeLoDW=> filetime.dwLowDateTime, timeHiDW=> filetime.dwHighDateTime);
+systemtid:= FILETIME_TO_DT(filetime);
+stringTid:= DT_TO_STRING(systemtid);
+
+//timme
+stringTimme:=MID(stringTid, 2, 15);
+timme:= STRING_TO_INT(stringTimme);
+
+//Data som skall in i struct
+timDataMomentan.DatumTid:=systemtid;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="LoggaTimData" Id="{6d1a6346-5045-4466-888c-511f03431295}">
+      <Declaration><![CDATA[METHOD LoggaTimData : BOOL
+VAR_INPUT
+END_VAR
+
+VAR
+
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+	timIndex:=timIndex+1;
+	GVL.timData[timIndex].DatumTid:=timDataMomentan.DatumTid;
+	GVL.timData[timIndex].timPris:= timDataMomentan.timPris;
+	GVL.timData[timIndex].nettoEnergi:=timDataMomentan.nettoEnergi;
+	GVL.timData[timIndex].saaldEnergi:=timDataMomentan.saaldEnergi;
+	GVL.timData[timIndex].KoeptEnergi:=timDataMomentan.KoeptEnergi;
+	GVL.timData[timIndex].toppNettoEffekt:=timDataMomentan.toppNettoEffekt;
+	GVL.timData[timIndex].laegstaNettoEffekt:=timDataMomentan.laegstaNettoEffekt;
+	GVL.timData[timIndex].leagstaSolEffekt:=timDataMomentan.leagstaSolEffekt;
+	GVL.timData[timIndex].hoegstaSolEffekt:=timDataMomentan.hoegstaSolEffekt;
+	GVL.timData[timIndex].avbetalningSolceller:=timDataMomentan.avbetalningSolceller;
+	GVL.timData[timIndex].sparatSolceller:=timDataMomentan.sparatSolceller;
+	GVL.timData[timIndex].saaltSolceller:=timDataMomentan.saaltSolceller;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="NollstaellAccumuleradeTimData" Id="{f1c1ad40-f03e-4a1c-82a9-f7024d78d96f}">
+      <Declaration><![CDATA[METHOD NollstaellAccumuleradeTimData : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[//Nollställ timDataMomentan
+timDataMomentan.hoegstaSolEffekt:=0;
+timDataMomentan.KoeptEnergi:=0;
+timDataMomentan.laegstaNettoEffekt:=0;
+timDataMomentan.leagstaSolEffekt:=0;
+timDataMomentan.nettoEnergi:=0;
+timDataMomentan.saaldEnergi:=0;
+timDataMomentan.saaltSolceller:=0;
+timDataMomentan.sparatSolceller:=0;
+timDataMomentan.toppNettoEffekt:=0;]]></ST>
+      </Implementation>
+    </Method>
   </POU>
 </TcPlcObject>

@@ -8,13 +8,13 @@ STRUCT
 
 //Energi
 	nettoEnergi	: REAL;	//kWh
-	saalEnergi	: REAL;	//kWh
+	saaldEnergi	: REAL;	//kWh
 	KoeptEnergi	: REAL; //kWh
 
 //Effekt topp och botten
 	toppNettoEffekt	: 		REAL; 	//kW
 	laegstaNettoEffekt: 	REAL;	//kW
-	leagsaSolEffekt:	REAL;	//kW
+	leagstaSolEffekt:	REAL;	//kW
 	hoegstaSolEffekt:	REAL;	//kW
 	
 //Ekonomi

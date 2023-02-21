@@ -4,6 +4,7 @@
     <Declaration><![CDATA[FUNCTION_BLOCK FB_HTTP_Get_SmartMeter
 VAR_INPUT
 	bSend				: BOOL;
+	timDataMomentan:REFERENCE TO ST_timData;
 END_VAR
 VAR_IN_OUT
 	fbClient			: FB_IotHttpClient;
@@ -89,21 +90,23 @@ CASE nState OF
 			//räkna ut lägsta och högsta effekt
 			IF felkod = 0 THEN
 					
-				nettoEffekt := STRING_TO_REAL(GVL.stSmartDataMomentan.PowerDeliveredNetto);
+				timDataMomentan.nettoEnergi := STRING_TO_REAL(GVL.stSmartDataMomentan.PowerDeliveredNetto);
 				SaaldEffekt:= STRING_TO_REAL(GVL.stSmartDataMomentan.PowerReturned_total);
 				KoeptEffekt := STRING_TO_REAL(GVL.stSmartDataMomentan.PowerDelivered_total);
+				nettoEffekt:= KoeptEffekt-SaaldEffekt;
 				
-				NettoEnergiAccumulerat:= NettoEnergiAccumulerat+ (nettoEffekt/360000);
-				SaaldEnergiAccumulerat:= SaaldEnergiAccumulerat+ (SaaldEffekt/360000);
-				KoeptEnergiAccumulerat:= KoeptEnergiAccumulerat+(KoeptEffekt/360000);
+				//skriv in i Struct
+				timDataMomentan.nettoEnergi:= NettoEnergiAccumulerat+ (nettoEffekt/360000);
+				timDataMomentan.saaldEnergi:= SaaldEnergiAccumulerat+ (SaaldEffekt/360000);
+				timDataMomentan.KoeptEnergi:= KoeptEnergiAccumulerat+(KoeptEffekt/360000);
 				
 				
-				IF Effektlaegsta> nettoEffekt THEN 	
-				effektlaegsta:=nettoEffekt;
+				IF timDataMomentan.laegstaNettoEffekt> nettoEffekt THEN 	
+				timDataMomentan.laegstaNettoEffekt:=nettoEffekt;
 				END_IF
 			
-				IF Effekthoegsta< nettoEffekt THEN 	
-				Effekthoegsta:=nettoEffekt;
+				IF timDataMomentan.toppNettoEffekt< nettoEffekt THEN 	
+				timDataMomentan.toppNettoEffekt:=nettoEffekt;
 				END_IF
 				
 			END_IF
