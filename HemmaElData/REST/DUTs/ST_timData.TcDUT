@@ -10,17 +10,22 @@ STRUCT
 	nettoEnergi	: REAL;	//kWh
 	saaldEnergi	: REAL;	//kWh
 	KoeptEnergi	: REAL; //kWh
+	HusetEnergi : REAL; //kWh
 
 //Effekt topp och botten
 	toppNettoEffekt	: 		REAL; 	//kW
 	laegstaNettoEffekt: 	REAL;	//kW
 	leagstaSolEffekt:	REAL;	//kW
 	hoegstaSolEffekt:	REAL;	//kW
+	leagstaHusEffekt:	REAL;	//kW
+	hoegstaHusEffekt:	REAL;	//kW
 	
 //Ekonomi
 	avbetalningSolceller	: 	REAL; 	//kr -besparing och såld el
 	sparatSolceller		:	REAL; 	//kr -solel till hushållet
 	saaltSolceller 		: 	REAL; 	//kr -spotpris plus 60 öre skatteavdrag
+	Koept				:	REAL;    //kr 
+	
 END_STRUCT
 END_TYPE
 ]]></Declaration>

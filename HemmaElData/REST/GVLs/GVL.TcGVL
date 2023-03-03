@@ -3,11 +3,24 @@
   <GVL Name="GVL" Id="{e7e50caa-0e93-438c-b1b4-45ba3504a240}">
     <Declaration><![CDATA[{attribute 'qualified_only'}
 VAR_GLOBAL
-	stSmartDataMomentan: SmartMeterValues;
-	elpriserTimme: ARRAY[0..23] OF ST_elpriserTimme; //från elpriserjustnu.se
-	
+	HusetsElfoerbrukning: ARRAY[0..23] OF HusetsElfoerbrukning;
 	
 	timData: ARRAY[0..87600] OF ST_timData;
+	
+	//Från EON
+	ElOeverfoeringsAvgiftEonKWh: 	REAL:= 26.45;			// Mars 2023
+	EnergiskattKWh: 				REAL:= 49.0;			// Mars 2023
+	MomsKWh:		 				REAL:= 18.86;
+	
+	NaetNyttaKWh:   REAL:= 16.63;							// Mars 2023
+	
+	//Från Kraftringen
+	PaaslagMinusRabattKWh: REAL:= 0.9;						// Jan 2023
+	//Moms tillkommer också men räknas på spotpriset
+	
+	//Från Staten
+	SkatteAvdragKWh:	REAL:= 0.60;
+	
 END_VAR]]></Declaration>
   </GVL>
 </TcPlcObject>

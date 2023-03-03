@@ -49,7 +49,7 @@ VAR
 
 	Funkar: BOOL;
 	nisse: INT;
-
+	stSmartDataMomentan: SmartMeterValues;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[RisingEdge(CLK:= bSend );
@@ -65,7 +65,7 @@ CASE nState OF
 			nReqCount:= nReqCount+1;
 			bBusy:= TRUE;
 			bError:= FALSE;
-		END_IF					
+		END_IF				
 	END_IF
 1:
 
@@ -83,16 +83,16 @@ CASE nState OF
 				bGetJsonResult:= FALSE;
 			
 			//Kopiera hela den importerade JSON-formaterade datasträngen och lägg i en motsvarande TwinCAT-struktur
-			IF fbJsonDataType.SetSymbolFromJson(sContent, 'SmartMeterValues', SIZEOF(GVL.stSmartDataMomentan), ADR(GVL.stSmartDataMomentan), hrErrorCode=> felkod) THEN
+			IF fbJsonDataType.SetSymbolFromJson(sContent, 'SmartMeterValues', SIZEOF(stSmartDataMomentan), ADR(stSmartDataMomentan), hrErrorCode=> felkod) THEN
 						bError:= FALSE;
 					END_IF	
 			
 			//räkna ut lägsta och högsta effekt
 			IF felkod = 0 THEN
 					
-				timDataMomentan.nettoEnergi := STRING_TO_REAL(GVL.stSmartDataMomentan.PowerDeliveredNetto);
-				SaaldEffekt:= STRING_TO_REAL(GVL.stSmartDataMomentan.PowerReturned_total);
-				KoeptEffekt := STRING_TO_REAL(GVL.stSmartDataMomentan.PowerDelivered_total);
+				timDataMomentan.nettoEnergi := STRING_TO_REAL(stSmartDataMomentan.PowerDeliveredNetto);
+				SaaldEffekt:= STRING_TO_REAL(stSmartDataMomentan.PowerReturned_total);
+				KoeptEffekt := STRING_TO_REAL(stSmartDataMomentan.PowerDelivered_total);
 				nettoEffekt:= KoeptEffekt-SaaldEffekt;
 			END_IF	
 			
@@ -103,13 +103,16 @@ CASE nState OF
 				
 				
 				IF timDataMomentan.laegstaNettoEffekt> nettoEffekt THEN 	
-				timDataMomentan.laegstaNettoEffekt:=nettoEffekt;
-				END_IF
-			
-				IF timDataMomentan.toppNettoEffekt< nettoEffekt THEN 	
-				timDataMomentan.toppNettoEffekt:=nettoEffekt;
+					timDataMomentan.laegstaNettoEffekt:=nettoEffekt;
+				ELSIF timDataMomentan.toppNettoEffekt< nettoEffekt THEN 	
+					timDataMomentan.toppNettoEffekt:=nettoEffekt;			
 				END_IF
 				
+				IF timDataMomentan.leagstaSolEffekt> SaaldEffekt THEN
+					timDataMomentan.leagstaSolEffekt:= SaaldEffekt;
+				ELSIF timDataMomentan.hoegstaSolEffekt< SaaldEffekt THEN
+					timDataMomentan.hoegstaSolEffekt:= SaaldEffekt;
+				END_IF
 	
 
 			
@@ -117,12 +120,20 @@ CASE nState OF
 			END_IF
 		END_IF
 			nisse:=nisse+1;
-		nState:= 0;
+		nState:= 2;
 		bBusy:= FALSE;
 		IF bError THEN
 			nErrCount:= nErrCount+1;
 		END_IF
 	END_IF  	
+
+2:   //Räkna ut pengar
+
+timDataMomentan.saaltSolceller:= timDataMomentan.saaltSolceller+(SaaldEffekt/144*(timDataMomentan.timPris+GVL.NaetNyttaKWh+GVL.SkatteAvdragKWh));
+timDataMomentan.Koept:= timDataMomentan.Koept + KoeptEffekt/144*(timDataMomentan.timPris+GVL.ElOeverfoeringsAvgiftEonKWh+GVL.EnergiskattKWh+GVL.MomsKWh+GVL.PaaslagMinusRabattKWh);
+nState:= 0;
+
+	
 END_CASE
 ]]></ST>
     </Implementation>

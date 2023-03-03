@@ -4,6 +4,9 @@
     <Declaration><![CDATA[FUNCTION_BLOCK FB_HTTP_Get_Elpris
 VAR_INPUT
 	bSend				: BOOL;
+	timDataMomentan:REFERENCE TO ST_timData;
+	stringDatumTid: STRING;
+	timIndex: REFERENCE TO INT;
 END_VAR
 VAR_IN_OUT
 	fbClient			: FB_IotHttpClient;
@@ -57,20 +60,36 @@ VAR
 	sJsonArray			:SJsonValue;
 
 	SCopiedJson: STRING(200);
+	elpriserTimme: ARRAY[0..23] OF ST_elpriserTimme; //från elpriserjustnu.se
+	
+	sUri: STRING(255);
+	stringDatum: STRING(255);
+	stringAar: STRING(255);
+	i: INT;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[RisingEdge(CLK:= bSend );
 CASE nState OF
 0:	
 	IF RisingEdge.Q THEN 
+	
 		 
-				
-		IF fbRequest.SendRequest(sUri:='/api/v1/prices/2023/02-14_SE4.json', fbClient:=fbClient, eRequestType:=ETcIotHttpRequestType.HTTP_GET, 0, 0, 0) THEN
-		
+			stringAar:=MID(stringDatumTid, 4, 4);
+				stringDatum:=MID(stringDatumTid, 5, 9);
+			 
+			 sUri:=concat('/api/v1/prices/', stringAar);
+			 sUri:=concat(sUri,'/'); 
+			 sUri:=concat(sUri,stringDatum);
+			 sUri:=concat(sUri,'_SE4.json');
+			 //sUri:='/api/v1/prices/2023/02-14_SE4.json'
+
+		IF fbRequest.SendRequest(sUri:=sUri, fbClient:=fbClient, eRequestType:=ETcIotHttpRequestType.HTTP_GET, 0, 0, 0) THEN
+			
 			nState:= 1;
 			nReqCount:= nReqCount+1;
 			bBusy:= TRUE;
 			bError:= FALSE;
+			sUri:='';
 		END_IF					
 	END_IF
 1:
@@ -98,13 +117,13 @@ CASE nState OF
 				
 					nSize:= LIMIT(1, fbJson.GetArraySize(jsonDoc), 100);
 					
-					FOR nIndex:= 0 TO (nSize-1) DO
+					FOR nIndex:= 0 TO (nSize-1) DO   //Alltid 0-23 timmar
 						
 						sJsonArrayIndex:= fbJson.GetArrayValueByIdx(jsonDoc, nIndex);
 						
 						fbJson.CopyJson(sJsonArrayIndex, SCopiedJson, SIZEOF(SCopiedJson));
 						
-						fbJsonDataType.SetSymbolFromJson(sCopiedJson, 'ST_elpriserTimme', SIZEOF(GVL.elpriserTimme[nIndex]), ADR(GVL.elpriserTimme[nIndex]));
+						fbJsonDataType.SetSymbolFromJson(sCopiedJson, 'ST_elpriserTimme', SIZEOF(elpriserTimme[nIndex]), ADR(elpriserTimme[nIndex]));
 												
 					END_FOR
 				
@@ -115,7 +134,8 @@ CASE nState OF
 				END_IF	
 		*)
 		
-				nResCount:= nResCount+1;			
+				nResCount:= nResCount+1 ;	
+
 			END_IF
 		END_IF
 		nState:= 0;
@@ -125,7 +145,15 @@ CASE nState OF
 		END_IF
 	END_IF  
 END_IF	
+
+
 END_CASE
+
+//Stoppa in dygnets elpriser
+FOR i:= timIndex TO (timIndex+23) DO
+	GVL.timData[i].timPris:= elpriserTimme[i-timIndex].SEK_per_kWh;
+END_FOR
+//timDataMomentan.timPris:= 
 ]]></ST>
     </Implementation>
   </POU>

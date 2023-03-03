@@ -1,84 +1,120 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
-  <POU Name="MAIN" Id="{b37e2b32-48ef-44fd-8d39-b46780530972}" SpecialFunc="None">
+  <POU Name="MAIN" Id="{aeb0ffbd-bfce-412b-af43-72f522b12325}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM MAIN
 VAR
 	// trigger command execution for Postman-Echo samples
-		bGetSmartMeter, bGetPris,bGetSMHI	: BOOL;
+		bGet10sek, bGet24h,bGetSMHI	: BOOL;
 
-	fbHttpClientSmartMeter			: FB_IotHttpClient :=(sHostName:='192.168.68.61',   //connectix_smartmeter.local
+	fbHttpClientEonMaetare			: FB_IotHttpClient :=(sHostName:='connectix_smartmeter.local',   //connectix_smartmeter.local
 								  	bKeepAlive:=TRUE, tConnectionTimeout:=T#20S);
+									
+	fbHttpClientHuset			: FB_IotHttpClient :=(sHostName:='192.168.68.58', //Husets El - Shelly
+								  	bKeepAlive:=TRUE, tConnectionTimeout:=T#10S);
 		
 	fbHttpClientElpriset			: FB_IotHttpClient :=(sHostName:='elprisetjustnu.se',
-	
-								  	bKeepAlive:=TRUE, tConnectionTimeout:=T#5S);
+									  	bKeepAlive:=TRUE, tConnectionTimeout:=T#4S);
 									
 	fbHttpClientSMHI			: FB_IotHttpClient :=(sHostName:='opendata-download-metfcst.smhi.se',
 								  	bKeepAlive:=FALSE, tConnectionTimeout:=T#10S);
 
-	fbHttpGet						: FB_HTTP_Get_SmartMeter;
-	fbHttpGetElpriset				: FB_HTTP_Get_Elpris;
+	fbHttpGetEonMaetare			: FB_HTTP_Get_SmartMeter;
+	fbHttpGetHuset				: FB_HTTP_Get_Huset;
+	fbHttpGetElpriset			: FB_HTTP_Get_Elpris;
 	fbHttpGetSMHI				: FB_HTTP_Get_SMHI;
 	
-	fbUppdateraTimData: FB_uppdateraTimData;
+
 	timDataMomentan:ST_timData;
 
 	samladataIntervall: TON;
-
+		
 	
 	trigger: BOOL;
 	loggadata: BOOL;
 	raeknartid: TIME;
 
 	nisse: INT;
+	klar: BOOL;
+	funkar: BOOL;
+	upptagen: BOOL;
 	
+			systemtid: DT;
+	fbGetsytstemtime: GETSYSTEMTIME;
+	filetime: T_FILETIME;
 
-
-	tidDataMomentan: POINTER TO ST_timData;
+	// Tider
+	timme: INT;
+	TIMEvaerde: TIME;
+	TODvaerde: TIME_OF_DAY;
+	stringTid: STRING;
+	stringTimme: STRING(255);
+	timmeloggad: INT;
+	timIndex: INT;    					 //remanent   //Från 0 till 87000 = 10 år
+	stringDatum: STRING(255);
+	stringDatumTid: STRING;
+	bBusyHuset: BOOL;
+	bBusyEon: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
 
-
 //SmartMeter, hämta data en gång per 10sekunder
 
-// init client parameters at startup
-IF NOT fbHttpClientSmartMeter.bConfigured THEN 
-	fbHttpClientSmartMeter.nHostPort:= 82;
+// EON-mätare - init client parameters at startup
+IF NOT fbHttpClientEonMaetare.bConfigured THEN 
+	fbHttpClientEonMaetare.nHostPort:= 82;
 END_IF
 
-fbHttpClientSmartMeter.Execute();
+fbHttpClientEonMaetare.Execute();
 
-samladataIntervall(IN:=trigger, PT:=  T#10S, Q=>bGetSmartMeter ,ET=> raeknartid);
+// Husets-mätare - init client parameters at startup
+IF NOT fbHttpClientHuset.bConfigured THEN 
+	fbHttpClientHuset.nHostPort:= 80;
+END_IF
+
+fbHttpClientHuset.Execute();
+
+// 10 sekunder - Cyklisk fråga med GET - EON-mätare och Hemma-mätare 
+
+samladataIntervall(IN:=trigger, PT:=  T#5S, Q=>klar ,ET=> raeknartid);
 IF samladataIntervall.Q THEN
 	nisse:=nisse+1;			
-	trigger:=FALSE;			
+	trigger:=FALSE;	
+	bGet10sek:=NOT bGet10sek;
 ELSE
 		trigger:=TRUE;
 END_IF
 
-IF fbHttpClientSmartMeter.bConfigured THEN 
-		fbHttpGet(timDataMomentan:=timDataMomentan,bSend:=bGetSmartMeter, fbClient:=fbHttpClientSmartMeter);
+IF fbHttpClientEonMaetare.bConfigured THEN 
+		fbHttpGetEonMaetare(timDataMomentan:=timDataMomentan,bSend:= NOT bGet10sek, fbClient:=fbHttpClientEonMaetare,bBusy=>bBusyEon);
 END_IF
 
+//Hemmamätare
+IF fbHttpClientHuset.bConfigured THEN 
+		fbHttpGetHuset(timDataMomentan:=timDataMomentan,bSend:=bGet10sek, fbClient:=fbHttpClientHuset, bBusy=>bBusyHuset);
+END_IF
 
 
 
 /////////////////////////////////////////////
-//Elpriser 
+//24 timmar - Elpriser 
 
 // init client parameters at startup
 IF NOT fbHttpClientElpriset.bConfigured THEN 
-	//fbHttpClientElpriset.nHostPort:= 443;
 	fbHttpClientElpriset.stTLS.sVersion:='tlsv1.3';
-	
 
-	
 	
 END_IF
 IF fbHttpClientElpriset.bConfigured THEN 
-	fbHttpGetElpriset(bSend:=bGetPris, fbClient:=fbHttpClientElpriset);
+	
+	IF timme= 0 THEN
+		bGet24h:= TRUE;
+	ELSE 
+		bGet24h:= FALSE;
+	END_IF
+	
+	fbHttpGetElpriset(bSend:=bGet24h, fbClient:=fbHttpClientElpriset, stringDatumTid:=stringDatumTid, timIndex:=timIndex);
 END_IF 
 
 fbHttpClientElpriset.Execute();
@@ -98,15 +134,111 @@ END_IF
 
 fbHttpClientSMHI.Execute();
 
-fbUppdateraTimData(timDataMomentan:=timDataMomentan);
+//Räkna fram nuvarande tid och datum
+fbGetsytstemtime(timeLoDW=> filetime.dwLowDateTime, timeHiDW=> filetime.dwHighDateTime);
+	systemtid:= FILETIME_TO_DT(filetime);
+	stringDatumTid:= DT_TO_STRING(systemtid);
+	
+	//timme
+	stringTimme:=MID(stringDatumTid, 2, 15);
+	timme:= STRING_TO_INT(stringTimme);
 
 
+// Logga data en gång i timmen
+
+IF timme <> timmeloggad THEN
+	timmeloggad:=timme;
+	timIndex:=timIndex+1;      
+	LoggaTimData();
+END_IF
+
+
+]]></ST>
+    </Implementation>
+    <Method Name="HaemtaOchManipuleraTider" Id="{c5c0a27f-4ae9-4949-8126-d40f2dbc816a}">
+      <Declaration><![CDATA[METHOD HaemtaOchManipuleraTider : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+
+//Detta FB andvänds inte just nu
+
+fbGetsytstemtime(timeLoDW=> filetime.dwLowDateTime, timeHiDW=> filetime.dwHighDateTime);
+systemtid:= FILETIME_TO_DT(filetime);
+stringTid:= DT_TO_STRING(systemtid);
+
+//timme
+stringTimme:=MID(stringTid, 2, 15);
+timme:= STRING_TO_INT(stringTimme);
+
+//Data som skall in i struct
+timDataMomentan.DatumTid:=systemtid;
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="LoggaTimData" Id="{6d1a6346-5045-4466-888c-511f03431295}">
+      <Declaration><![CDATA[METHOD LoggaTimData : BOOL
+VAR_INPUT
+END_VAR
+
+VAR
+
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+
+	
+	GVL.timData[timIndex].DatumTid:=timDataMomentan.DatumTid;
+	
+	//GVL.timData[timIndex].timPris:= timDataMomentan.timPris;   Kommer från FB:t som hämtar Elpriser
+	
+	GVL.timData[timIndex].nettoEnergi:=timDataMomentan.nettoEnergi;   //Energi in eller ut till nätet.  //klar
+	timDataMomentan.nettoEnergi:=0;
+	
+	GVL.timData[timIndex].saaldEnergi:=timDataMomentan.saaldEnergi;    //klar
+	timDataMomentan.saaldEnergi:=0;
+	
+	GVL.timData[timIndex].KoeptEnergi:=timDataMomentan.KoeptEnergi;   //klar
+	timDataMomentan.KoeptEnergi:=0;
+	
+	GVL.timData[timIndex].toppNettoEffekt:=timDataMomentan.toppNettoEffekt;    //klar
+	timDataMomentan.toppNettoEffekt:=0;
+	
+	GVL.timData[timIndex].laegstaNettoEffekt:=timDataMomentan.laegstaNettoEffekt;    //klar
+	timDataMomentan.laegstaNettoEffekt:=0;
+	
+	
+	GVL.timData[timIndex].leagstaSolEffekt:=timDataMomentan.leagstaSolEffekt;    //klar
+	timDataMomentan.leagstaSolEffekt:=0;
+	
+	GVL.timData[timIndex].hoegstaSolEffekt:=timDataMomentan.hoegstaSolEffekt;     //klar
+	timDataMomentan.hoegstaSolEffekt:=0;
+	
+	GVL.timData[timIndex].avbetalningSolceller:=timDataMomentan.avbetalningSolceller;  //Skall inte nollställas
+
+	
+	GVL.timData[timIndex].sparatSolceller:=timDataMomentan.sparatSolceller;  //Skall inte nollställas
+
+	
+	GVL.timData[timIndex].saaltSolceller:=timDataMomentan.saaltSolceller;  //Skall inte nollställas
+	
+	GVL.timData[timIndex].HusetEnergi:= timDataMomentan.HusetEnergi;  //accumulerad 1 timme
+	timDataMomentan.HusetEnergi:=0;
+	
 
 	
 
 
 
+
+
+
+
 ]]></ST>
-    </Implementation>
+      </Implementation>
+    </Method>
   </POU>
 </TcPlcObject>

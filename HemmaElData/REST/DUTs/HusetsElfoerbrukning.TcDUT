@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="HusetsElfoerbrukning" Id="{905f5353-aaa8-4a18-a661-7a745e874b1d}">
+    <Declaration><![CDATA[TYPE HusetsElfoerbrukning :
+STRUCT
+	power:REAL;
+	pf:REAL;
+	current:REAL;
+	voltage:REAL;
+	is_valid:BOOL;
+	total:REAL;
+	total_returned:REAL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

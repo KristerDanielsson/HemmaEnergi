@@ -3,9 +3,9 @@
   <DUT Name="ST_elpriserTimme" Id="{2cea369c-0619-4573-b098-86de5e62e472}">
     <Declaration><![CDATA[TYPE ST_elpriserTimme :
 STRUCT
-	SEK_per_kWh: REAL;
-    EUR_per_kWh: REAL;
-    EXR: REAL;
+	SEK_per_kWh: REAL;   //Spotpris kr
+    EUR_per_kWh: REAL;   //Spotpris EUR
+    EXR: REAL;			//Växelkurs
     time_start: DATE_AND_TIME;
     time_end: DATE_AND_TIME;
 END_STRUCT
