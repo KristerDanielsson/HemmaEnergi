@@ -6,7 +6,7 @@ VAR
 	// trigger command execution for Postman-Echo samples
 		bGet10sek, bGet24h,bGetSMHI	: BOOL;
 
-	fbHttpClientEonMaetare			: FB_IotHttpClient :=(sHostName:='connectix_smartmeter.local',   //connectix_smartmeter.local
+	fbHttpClientEonMaetare			: FB_IotHttpClient :=(sHostName:='192.168.68.61',   //connectix_smartmeter.local
 								  	bKeepAlive:=TRUE, tConnectionTimeout:=T#20S);
 									
 	fbHttpClientHuset			: FB_IotHttpClient :=(sHostName:='192.168.68.58', //Husets El - Shelly
@@ -52,8 +52,16 @@ VAR
 	timIndex: INT;    					 //remanent   //Från 0 till 87000 = 10 år
 	stringDatum: STRING(255);
 	stringDatumTid: STRING;
+	
+
 	bBusyHuset: BOOL;
 	bBusyEon: BOOL;
+	
+	solEffektWh: 			REAL;	//kW
+	husEffektWh: 			REAL;	//kW
+	nettoEffektWh:		REAL;	//kW
+	
+	sparadEffekt: REAL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -87,15 +95,33 @@ ELSE
 END_IF
 
 IF fbHttpClientEonMaetare.bConfigured THEN 
-		fbHttpGetEonMaetare(timDataMomentan:=timDataMomentan,bSend:= NOT bGet10sek, fbClient:=fbHttpClientEonMaetare,bBusy=>bBusyEon);
+		fbHttpGetEonMaetare(timDataMomentan:=timDataMomentan,nettoEffektWh:=nettoEffektWh,bSend:= bGet10sek, fbClient:=fbHttpClientEonMaetare,bBusy=>bBusyEon);
 END_IF
 
 //Hemmamätare
 IF fbHttpClientHuset.bConfigured THEN 
-		fbHttpGetHuset(timDataMomentan:=timDataMomentan,bSend:=bGet10sek, fbClient:=fbHttpClientHuset, bBusy=>bBusyHuset);
+		fbHttpGetHuset(timDataMomentan:=timDataMomentan,bSend:=bGet10sek, fbClient:=fbHttpClientHuset,husEffektWh:= husEffektWh, bBusy=>bBusyHuset);
 END_IF
 
-
+IF NOT bGet10sek THEN
+	solEffektWh:= solEffektWh/1000-nettoEffektWh/1000;
+	
+	IF solEffektWh>0 AND solEffektWh < husEffektWh THEN
+		sparadEffekt:=husEffektWh/1000;
+	ELSIF solEffektWh>0 AND solEffektWh < husEffektWh THEN
+		sparadEffekt:=solEffektWh/1000;
+	ELSIF solEffektWh<= 0 THEN
+		sparadEffekt:=0;
+	END_IF
+	
+	
+				IF timDataMomentan.leagstaSolEffekt> solEffektWh/1000 THEN
+					timDataMomentan.leagstaSolEffekt:= solEffektWh/1000;
+				ELSIF timDataMomentan.hoegstaSolEffekt< solEffektWh/1000 THEN
+					timDataMomentan.hoegstaSolEffekt:= solEffektWh/1000;
+				END_IF
+	timDataMomentan.sparatSolceller:= timDataMomentan.sparatSolceller + sparadEffekt/144000*(timDataMomentan.timPris+GVL.ElOeverfoeringsAvgiftEonKWh+GVL.EnergiskattKWh+GVL.MomsKWh+GVL.PaaslagMinusRabattKWh);
+END_IF
 
 /////////////////////////////////////////////
 //24 timmar - Elpriser 

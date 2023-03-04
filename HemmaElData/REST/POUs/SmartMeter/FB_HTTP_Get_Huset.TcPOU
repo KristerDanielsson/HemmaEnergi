@@ -5,6 +5,7 @@
 VAR_INPUT
 	bSend				: BOOL;
 	timDataMomentan:REFERENCE TO ST_timData;
+	husEffektWh:REFERENCE TO REAL;
 END_VAR
 VAR_IN_OUT
 	fbClient			: FB_IotHttpClient;
@@ -51,7 +52,7 @@ VAR
 	nState1: UDINT;
 	nState2: UDINT;
 	nState3: UDINT;
-	HusetsDataMomentanPower: REAL;
+
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[RisingEdge(CLK:= bSend );
@@ -156,6 +157,8 @@ IF NOT fbRequest.bBusy THEN
 	END_IF  
 
 6:   //Räkna ut pengar
+	//HusetsEffekt+timDataMomentan.Koept
+//timDataMomentan.nettoEnergi
 
 nState:= 0;
 
@@ -173,6 +176,7 @@ VAR
 
 	n: INT;
 
+	
 END_VAR]]></Declaration>
       <Implementation>
         <ST><![CDATA[//Hämta data från mätarens HTTP REST API och lägg i string
@@ -189,20 +193,23 @@ END_VAR]]></Declaration>
 				
 				//När alla faser är genomgångna								
 				IF nState = 5 THEN
-					FOR n :=0 TO 2 DO
-						timDataMomentan.HusetEnergi:= timDataMomentan.nettoEnergi+ (stHusetsDataMomentan[n].power/144);
-						HusetsDataMomentanPower := HusetsDataMomentanPower+ stHusetsDataMomentan[n].power;
+				
+				husEffektWh :=0;	
+				FOR n :=0 TO 2 DO
+						timDataMomentan.HusetEnergi:= timDataMomentan.HusetEnergi+ (stHusetsDataMomentan[n].power/144000);		//Accumulerad Energi, nollställs varje timme
+						husEffektWh := husEffektWh+ stHusetsDataMomentan[n].power;					//tillfällig effekt
+	
 						
 					END_FOR
 						//skriv in i Struct
 					
 				
-					IF timDataMomentan.leagstaHusEffekt> HusetsDataMomentanPower THEN 	
-					timDataMomentan.leagstaHusEffekt:=HusetsDataMomentanPower;
+					IF timDataMomentan.leagstaHusEffekt> husEffektWh THEN 	
+					timDataMomentan.leagstaHusEffekt:=husEffektWh;
 					END_IF
 				
-					IF timDataMomentan.hoegstaHusEffekt< HusetsDataMomentanPower  THEN 	
-					timDataMomentan.hoegstaHusEffekt:= HusetsDataMomentanPower;
+					IF timDataMomentan.hoegstaHusEffekt< husEffektWh  THEN 	
+					timDataMomentan.hoegstaHusEffekt:= husEffektWh;
 					END_IF
 					
 					

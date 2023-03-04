@@ -61,9 +61,6 @@
     <Compile Include="POUs\SmartMeter\BraAttHa.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\SmartMeter\FB_HTTP_Get_Huset_1.TcPOU">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="POUs\SmartMeter\FB_HTTP_Get_SmartMeter.TcPOU">
       <SubType>Code</SubType>
     </Compile>
