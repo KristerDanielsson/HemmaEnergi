@@ -49,7 +49,7 @@ VAR
 	KoeptEnergiAccumulerat: REAL;
 
 	Funkar: BOOL;
-	nisse: INT;
+	nisse: REAL;
 	stSmartDataMomentan: SmartMeterValues;
 END_VAR]]></Declaration>
     <Implementation>
@@ -94,7 +94,7 @@ CASE nState OF
 				//timDataMomentan.nettoEnergi := STRING_TO_REAL(stSmartDataMomentan.PowerDeliveredNetto);
 				SaaldEffektWh:= STRING_TO_REAL(stSmartDataMomentan.PowerReturned_total);
 				KoeptEffektWh := STRING_TO_REAL(stSmartDataMomentan.PowerDelivered_total);
-				nettoEffektWh:= (KoeptEffektWh-SaaldEffektWh);
+				nettoEffektWh:= STRING_TO_REAL(stSmartDataMomentan.PowerDeliveredNetto);
 			END_IF	
 			
 				//skriv in i Struct
@@ -127,7 +127,7 @@ CASE nState OF
 2:   //Räkna ut pengar
 timDataMomentan.saaltSolceller:= timDataMomentan.saaltSolceller+(SaaldEffektWh/144000*(timDataMomentan.timPris+GVL.NaetNyttaKWh+GVL.SkatteAvdragKWh));
 timDataMomentan.Koept:= timDataMomentan.Koept + KoeptEffektWh/144000*(timDataMomentan.timPris+GVL.ElOeverfoeringsAvgiftEonKWh+GVL.EnergiskattKWh+GVL.MomsKWh+GVL.PaaslagMinusRabattKWh);
-
+nisse:=KoeptEffektWh/144000*(timDataMomentan.timPris+GVL.ElOeverfoeringsAvgiftEonKWh+GVL.EnergiskattKWh+GVL.MomsKWh+GVL.PaaslagMinusRabattKWh);
 
 //IF timDataMomentan.husnettoEffekt
 

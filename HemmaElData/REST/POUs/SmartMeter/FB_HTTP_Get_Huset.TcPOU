@@ -204,12 +204,12 @@ END_VAR]]></Declaration>
 						//skriv in i Struct
 					
 				
-					IF timDataMomentan.leagstaHusEffekt> husEffektWh THEN 	
-					timDataMomentan.leagstaHusEffekt:=husEffektWh;
+					IF timDataMomentan.leagstaHusEffekt> husEffektWh/1000 THEN 	
+					timDataMomentan.leagstaHusEffekt:=husEffektWh/1000;
 					END_IF
 				
-					IF timDataMomentan.hoegstaHusEffekt< husEffektWh  THEN 	
-					timDataMomentan.hoegstaHusEffekt:= husEffektWh;
+					IF timDataMomentan.hoegstaHusEffekt< husEffektWh/1000  THEN 	
+					timDataMomentan.hoegstaHusEffekt:= husEffektWh/1000;
 					END_IF
 					
 					

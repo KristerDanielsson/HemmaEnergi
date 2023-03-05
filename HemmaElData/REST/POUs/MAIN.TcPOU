@@ -43,6 +43,12 @@ VAR
 	filetime: T_FILETIME;
 
 	// Tider
+
+	fbLocalTime     : FB_LocalSystemTime;
+		systemtidDT: DATE_AND_TIME;
+			datumTimmeString: STRING(255);
+		datumTimmeDT: DATE_AND_TIME;
+
 	timme: INT;
 	TIMEvaerde: TIME;
 	TODvaerde: TIME_OF_DAY;
@@ -57,11 +63,15 @@ VAR
 	bBusyHuset: BOOL;
 	bBusyEon: BOOL;
 	
+	RisingEdge			: R_TRIG;
 	solEffektWh: 			REAL;	//kW
 	husEffektWh: 			REAL;	//kW
 	nettoEffektWh:		REAL;	//kW
 	
 	sparadEffekt: REAL;
+
+
+
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -103,8 +113,9 @@ IF fbHttpClientHuset.bConfigured THEN
 		fbHttpGetHuset(timDataMomentan:=timDataMomentan,bSend:=bGet10sek, fbClient:=fbHttpClientHuset,husEffektWh:= husEffektWh, bBusy=>bBusyHuset);
 END_IF
 
-IF NOT bGet10sek THEN
-	solEffektWh:= solEffektWh/1000-nettoEffektWh/1000;
+RisingEdge(CLK:= NOT bGet10sek );
+IF  RisingEdge.Q THEN
+	solEffektWh:= husEffektWh-nettoEffektWh;
 	
 	IF solEffektWh>0 AND solEffektWh < husEffektWh THEN
 		sparadEffekt:=husEffektWh/1000;
@@ -120,6 +131,9 @@ IF NOT bGet10sek THEN
 				ELSIF timDataMomentan.hoegstaSolEffekt< solEffektWh/1000 THEN
 					timDataMomentan.hoegstaSolEffekt:= solEffektWh/1000;
 				END_IF
+
+	timDataMomentan.timPris:= GVL.timData[timIndex].timPris;
+
 	timDataMomentan.sparatSolceller:= timDataMomentan.sparatSolceller + sparadEffekt/144000*(timDataMomentan.timPris+GVL.ElOeverfoeringsAvgiftEonKWh+GVL.EnergiskattKWh+GVL.MomsKWh+GVL.PaaslagMinusRabattKWh);
 END_IF
 
@@ -160,23 +174,37 @@ END_IF
 
 fbHttpClientSMHI.Execute();
 
+
+
 //Räkna fram nuvarande tid och datum
-fbGetsytstemtime(timeLoDW=> filetime.dwLowDateTime, timeHiDW=> filetime.dwHighDateTime);
-	systemtid:= FILETIME_TO_DT(filetime);
-	stringDatumTid:= DT_TO_STRING(systemtid);
-	
+		fbLocalTime(bEnable := TRUE);
+		systemtidDT := SYSTEMTIME_TO_DT(fbLocalTime.systemTime);
+	  	stringDatumTid:= DT_TO_STRING(systemtidDT);
+		datumTimmeString:= MID(stringDatumTid, 17, 1);
+		datumTimmeString:= concat(datumTimmeString,'00');
+		datumTimmeDT:= STRING_TO_DT(datumTimmeString);
+
 	//timme
 	stringTimme:=MID(stringDatumTid, 2, 15);
 	timme:= STRING_TO_INT(stringTimme);
+
+
+	  
 
 
 // Logga data en gång i timmen
 
 IF timme <> timmeloggad THEN
 	timmeloggad:=timme;
-	timIndex:=timIndex+1;      
+	timIndex:=timIndex+1;
+ 
+
+//Data som skall in i struct
+	timDataMomentan.DatumTid:=datumTimmeDT;
+
 	LoggaTimData();
 END_IF
+
 
 
 ]]></ST>
@@ -242,6 +270,12 @@ END_VAR]]></Declaration>
 	
 	GVL.timData[timIndex].hoegstaSolEffekt:=timDataMomentan.hoegstaSolEffekt;     //klar
 	timDataMomentan.hoegstaSolEffekt:=0;
+	
+	GVL.timData[timIndex].leagstaHusEffekt:=timDataMomentan.leagstaHusEffekt;    //klar
+	timDataMomentan.leagstaHusEffekt:=0;
+	
+	GVL.timData[timIndex].hoegstaHusEffekt:=timDataMomentan.hoegstaHusEffekt;     //klar
+	timDataMomentan.hoegstaHusEffekt:=0;
 	
 	GVL.timData[timIndex].avbetalningSolceller:=timDataMomentan.avbetalningSolceller;  //Skall inte nollställas
 

@@ -7,14 +7,52 @@ END_VAR
 VAR_OUTPUT
 END_VAR
 VAR
-	//eWriteState: (FILE_OPEN_TRIGGER,FILE_OPEN, WAIT_FOR_EVENT, WRITE_EVENT_TRIGGER,WRITE_EVENT, FILE_CLOSE_TRIGGER, FILE_CLOSE, ERROR);
+	eWriteState: (FILE_OPEN_TRIGGER,FILE_OPEN, WAIT_FOR_EVENT, WRITE_EVENT_TRIGGER,WRITE_EVENT, FILE_CLOSE_TRIGGER, FILE_CLOSE, ERROR); //används i CASE istället för siffror
+	timestruct             : TIMESTRUCT;    
+	fbMeRingBuffer: FB_MemRingBuffer;   //Ringbuffert
 	
+	//Hämta lokal tid
+	   bInit           : BOOL;
+    nTime           : UINT;
+    tBufferTime     : TIME;
+    dtBufferDT      : DT;
+    nCalcBuffer     : UDINT;
+    sMs             : STRING;
+    sLogTime        : STRING;
+    sLogTimeWithMs  : STRING;
+    stSystemTime    : TIMESTRUCT;
+    fbLocalTime     : FB_LocalSystemTime;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
-
-]]></ST>
+//Hämta lokal tid
+	fbLocalTime(bEnable := TRUE);
+	  dtBufferDT := SYSTEMTIME_TO_DT(fbLocalTime.systemTime);fbLocalTime(bEnable := TRUE);
+IF NOT bInit
+THEN
+    dtBufferDT := SYSTEMTIME_TO_DT(fbLocalTime.systemTime);
+    IF fbLocalTime.bValid 
+    THEN
+        bInit := TRUE;
+    END_IF
+ELSE
+    nTime := nTime + 1;
+    tBufferTime := UINT_TO_TIME(nTime*10);
+    IF tBufferTime = T#1S
+    THEN
+        //Add a second to your system time
+        ntime := 0;
+        nCalcBuffer := DT_TO_UDINT(dtBufferDT)+1;
+        dtBufferDT := UDINT_TO_DT(nCalcBuffer);
+        sLogTime := DT_TO_STRING(dtBufferDT);
+        sLogTimeWithMs := sLogTime;
+    ELSE
+        //Add ms string time-stamp
+        sMs := TIME_TO_STRING(tBufferTime);
+        sLogTimeWithMs := CONCAT(sLogTime,sMs);
+    END_IF
+END_IF]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

@@ -8,14 +8,14 @@ VAR_GLOBAL
 	timData: ARRAY[0..87600] OF ST_timData;
 	
 	//Från EON
-	ElOeverfoeringsAvgiftEonKWh: 	REAL:= 26.45;			// Mars 2023
-	EnergiskattKWh: 				REAL:= 49.0;			// Mars 2023
-	MomsKWh:		 				REAL:= 18.86;
+	ElOeverfoeringsAvgiftEonKWh: 	REAL:= 0.2645;			// Mars 2023
+	EnergiskattKWh: 				REAL:= 0.49;			// Mars 2023
+	MomsKWh:		 				REAL:= 0.1886;
 	
-	NaetNyttaKWh:   REAL:= 16.63;							// Mars 2023
+	NaetNyttaKWh:   REAL:= 0.1663;							// Mars 2023
 	
 	//Från Kraftringen
-	PaaslagMinusRabattKWh: REAL:= 0.9;						// Jan 2023
+	PaaslagMinusRabattKWh: REAL:= 0.009;						// Jan 2023
 	//Moms tillkommer också men räknas på spotpriset
 	
 	//Från Staten
