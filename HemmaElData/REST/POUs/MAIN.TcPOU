@@ -24,7 +24,7 @@ VAR
 	fbHttpGetSMHI				: FB_HTTP_Get_SMHI;
 	
 
-	timDataMomentan:ST_timData;
+
 
 	samladataIntervall: TON;
 		
@@ -33,7 +33,7 @@ VAR
 	loggadata: BOOL;
 	raeknartid: TIME;
 
-	nisse: INT;
+	nisse: UINT;
 	klar: BOOL;
 	funkar: BOOL;
 	upptagen: BOOL;
@@ -55,7 +55,7 @@ VAR
 	stringTid: STRING;
 	stringTimme: STRING(255);
 	timmeloggad: INT;
-	timIndex: INT;    					 //remanent   //Från 0 till 87000 = 10 år
+
 	stringDatum: STRING(255);
 	stringDatumTid: STRING;
 	
@@ -64,14 +64,17 @@ VAR
 	bBusyEon: BOOL;
 	
 	RisingEdge			: R_TRIG;
-	solEffektWh: 			REAL;	//kW
-	husEffektWh: 			REAL;	//kW
-	nettoEffektWh:		REAL;	//kW
-	
-	sparadEffekt: REAL;
+	nettoEffektW: 			REAL;	//W
+	husEffektW: 			REAL;	//W
+	sparadEffektW: 			REAL;	//W
 
+	fbWritePersistent: FB_WritePersistentData;
+	bWritePersistent: BOOL;
+END_VAR
 
-
+VAR PERSISTENT
+	timIndex: INT;    					 //remanent   //Från 0 till 87000 = 10 år
+	timDataMomentan:ST_timData;  //accumulerar värden som sedan skall skrivas till rätt timme
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -105,36 +108,38 @@ ELSE
 END_IF
 
 IF fbHttpClientEonMaetare.bConfigured THEN 
-		fbHttpGetEonMaetare(timDataMomentan:=timDataMomentan,nettoEffektWh:=nettoEffektWh,bSend:= bGet10sek, fbClient:=fbHttpClientEonMaetare,bBusy=>bBusyEon);
+		fbHttpGetEonMaetare(timDataMomentan:=timDataMomentan,nettoEffektW:=nettoEffektW,bSend:= bGet10sek, fbClient:=fbHttpClientEonMaetare,bBusy=>bBusyEon);
 END_IF
 
 //Hemmamätare
 IF fbHttpClientHuset.bConfigured THEN 
-		fbHttpGetHuset(timDataMomentan:=timDataMomentan,bSend:=bGet10sek, fbClient:=fbHttpClientHuset,husEffektWh:= husEffektWh, bBusy=>bBusyHuset);
+		fbHttpGetHuset(timDataMomentan:=timDataMomentan,bSend:=bGet10sek, fbClient:=fbHttpClientHuset,husEffektW:= husEffektW, bBusy=>bBusyHuset);
 END_IF
 
 RisingEdge(CLK:= NOT bGet10sek );
 IF  RisingEdge.Q THEN
-	solEffektWh:= husEffektWh-nettoEffektWh;
+	nettoEffektW:= husEffektW-nettoEffektW;
 	
-	IF solEffektWh>0 AND solEffektWh < husEffektWh THEN
-		sparadEffekt:=husEffektWh/1000;
-	ELSIF solEffektWh>0 AND solEffektWh < husEffektWh THEN
-		sparadEffekt:=solEffektWh/1000;
-	ELSIF solEffektWh<= 0 THEN
-		sparadEffekt:=0;
+	IF nettoEffektW>0 AND nettoEffektW < husEffektW THEN
+		sparadEffektW:=husEffektW;
+	ELSIF nettoEffektW>0 AND nettoEffektW < husEffektW THEN
+		sparadEffektW:=nettoEffektW;
+	ELSIF nettoEffektW<= 0 THEN
+		sparadEffektW:=0;
 	END_IF
 	
 	
-				IF timDataMomentan.leagstaSolEffekt> solEffektWh/1000 THEN
-					timDataMomentan.leagstaSolEffekt:= solEffektWh/1000;
-				ELSIF timDataMomentan.hoegstaSolEffekt< solEffektWh/1000 THEN
-					timDataMomentan.hoegstaSolEffekt:= solEffektWh/1000;
+				IF timDataMomentan.leagstaSolEffekt> nettoEffektW THEN
+					timDataMomentan.leagstaSolEffekt:= nettoEffektW;
+				ELSIF timDataMomentan.hoegstaSolEffekt< nettoEffektW THEN
+					timDataMomentan.hoegstaSolEffekt:= nettoEffektW;
 				END_IF
 
 	timDataMomentan.timPris:= GVL.timData[timIndex].timPris;
 
-	timDataMomentan.sparatSolceller:= timDataMomentan.sparatSolceller + sparadEffekt/144000*(timDataMomentan.timPris+GVL.ElOeverfoeringsAvgiftEonKWh+GVL.EnergiskattKWh+GVL.MomsKWh+GVL.PaaslagMinusRabattKWh);
+	//Räkna ut pengar en gång per sampel (10s)
+	timDataMomentan.sparatSolceller:= timDataMomentan.sparatSolceller + sparadEffektW/144000*(timDataMomentan.timPris+GVL.ElOeverfoeringsAvgiftEonKWh+GVL.EnergiskattKWh+GVL.MomsKWh+GVL.PaaslagMinusRabattKWh);
+	timDataMomentan.avbetalningSolceller:=timDataMomentan.sparatSolceller+timDataMomentan.saaltSolceller;
 END_IF
 
 /////////////////////////////////////////////
@@ -188,22 +193,28 @@ fbHttpClientSMHI.Execute();
 	stringTimme:=MID(stringDatumTid, 2, 15);
 	timme:= STRING_TO_INT(stringTimme);
 
-
-	  
-
-
 // Logga data en gång i timmen
 
+
+bWritePersistent:= FALSE;
+
 IF timme <> timmeloggad THEN
+	bWritePersistent:= TRUE;
 	timmeloggad:=timme;
 	timIndex:=timIndex+1;
  
 
 //Data som skall in i struct
 	timDataMomentan.DatumTid:=datumTimmeDT;
-
 	LoggaTimData();
+
+	
+//Skriva persistent en gång i timmen
+	fbWritePersistent(START:=bWritePersistent,PORT:=851,BUSY=>upptagen);
+
+
 END_IF
+
 
 
 

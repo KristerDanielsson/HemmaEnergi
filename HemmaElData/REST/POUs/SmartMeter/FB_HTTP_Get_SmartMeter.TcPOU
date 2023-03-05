@@ -5,7 +5,7 @@
 VAR_INPUT
 	bSend				: BOOL;
 	timDataMomentan:REFERENCE TO ST_timData;
-	nettoEffektWh:REFERENCE TO REAL;
+	nettoEffektW:REFERENCE TO REAL;
 END_VAR
 VAR_IN_OUT
 	fbClient			: FB_IotHttpClient;
@@ -38,9 +38,8 @@ VAR
 	nErrCount			: UDINT;
 	Vaerde: LINT;
 	
-
-	SaaldEffektWh: REAL;
-	KoeptEffektWh: REAL;
+	KoeptEffektW: REAL;
+	SaaldEffektW: REAL;
 
 	Effektlaegsta: REAL :=100000.0 ;
 	Effekthoegsta: REAL;
@@ -51,6 +50,7 @@ VAR
 	Funkar: BOOL;
 	nisse: REAL;
 	stSmartDataMomentan: SmartMeterValues;
+	nisse1: REAL;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[RisingEdge(CLK:= bSend );
@@ -92,26 +92,22 @@ CASE nState OF
 			IF felkod = 0 THEN
 					
 				//timDataMomentan.nettoEnergi := STRING_TO_REAL(stSmartDataMomentan.PowerDeliveredNetto);
-				SaaldEffektWh:= STRING_TO_REAL(stSmartDataMomentan.PowerReturned_total);
-				KoeptEffektWh := STRING_TO_REAL(stSmartDataMomentan.PowerDelivered_total);
-				nettoEffektWh:= STRING_TO_REAL(stSmartDataMomentan.PowerDeliveredNetto);
+				KoeptEffektW:= STRING_TO_REAL(stSmartDataMomentan.PowerReturned_total);
+				KoeptEffektW := STRING_TO_REAL(stSmartDataMomentan.PowerDelivered_total);
+				nettoEffektW:= STRING_TO_REAL(stSmartDataMomentan.PowerDeliveredNetto);
+				
 			END_IF	
 			
 				//skriv in i Struct
-				timDataMomentan.nettoEnergi:= timDataMomentan.nettoEnergi+ (nettoEffektWh/144000);
-				timDataMomentan.saaldEnergi:= timDataMomentan.saaldEnergi+ (SaaldEffektWh/144000);
-				timDataMomentan.KoeptEnergi:= timDataMomentan.KoeptEnergi+(KoeptEffektWh/144000);
+				timDataMomentan.nettoEnergi:= timDataMomentan.nettoEnergi+ (nettoEffektW/144000);    //144 sampel per timme
+				timDataMomentan.saaldEnergi:= timDataMomentan.saaldEnergi+ (SaaldEffektW/144000);   //144 sampel per timme
+				timDataMomentan.KoeptEnergi:= timDataMomentan.KoeptEnergi+(KoeptEffektW/144000);   //144 sampel per timme
 				
-				
-				IF timDataMomentan.laegstaNettoEffekt> nettoEffektWh/1000 THEN 	
-					timDataMomentan.laegstaNettoEffekt:=nettoEffektWh/1000;
-				ELSIF timDataMomentan.toppNettoEffekt< nettoEffektWh/1000 THEN 	
-					timDataMomentan.toppNettoEffekt:=nettoEffektWh/1000;			
+				IF timDataMomentan.laegstaNettoEffekt> nettoEffektW THEN 	
+					timDataMomentan.laegstaNettoEffekt:=nettoEffektW;
+				ELSIF timDataMomentan.toppNettoEffekt< nettoEffektW THEN 	
+					timDataMomentan.toppNettoEffekt:=nettoEffektW;			
 				END_IF
-				
-				
-	
-
 			
 				nResCount:= nResCount+1;			
 			END_IF
@@ -125,11 +121,11 @@ CASE nState OF
 	END_IF  	
 
 2:   //Räkna ut pengar
-timDataMomentan.saaltSolceller:= timDataMomentan.saaltSolceller+(SaaldEffektWh/144000*(timDataMomentan.timPris+GVL.NaetNyttaKWh+GVL.SkatteAvdragKWh));
-timDataMomentan.Koept:= timDataMomentan.Koept + KoeptEffektWh/144000*(timDataMomentan.timPris+GVL.ElOeverfoeringsAvgiftEonKWh+GVL.EnergiskattKWh+GVL.MomsKWh+GVL.PaaslagMinusRabattKWh);
-nisse:=KoeptEffektWh/144000*(timDataMomentan.timPris+GVL.ElOeverfoeringsAvgiftEonKWh+GVL.EnergiskattKWh+GVL.MomsKWh+GVL.PaaslagMinusRabattKWh);
+timDataMomentan.saaltSolceller:= timDataMomentan.saaltSolceller+(SaaldEffektW/144000*(timDataMomentan.timPris+GVL.NaetNyttaKWh+GVL.SkatteAvdragKWh));  //Sålt i kr
 
-//IF timDataMomentan.husnettoEffekt
+timDataMomentan.Koept:= timDataMomentan.Koept + KoeptEffektW/144000*(timDataMomentan.timPris+GVL.ElOeverfoeringsAvgiftEonKWh+GVL.EnergiskattKWh+GVL.MomsKWh+GVL.PaaslagMinusRabattKWh);
+
+
 
 nState:= 0;
 

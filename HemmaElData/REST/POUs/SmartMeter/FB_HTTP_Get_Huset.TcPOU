@@ -5,7 +5,7 @@
 VAR_INPUT
 	bSend				: BOOL;
 	timDataMomentan:REFERENCE TO ST_timData;
-	husEffektWh:REFERENCE TO REAL;
+	husEffektW:REFERENCE TO REAL;
 END_VAR
 VAR_IN_OUT
 	fbClient			: FB_IotHttpClient;
@@ -194,22 +194,22 @@ END_VAR]]></Declaration>
 				//När alla faser är genomgångna								
 				IF nState = 5 THEN
 				
-				husEffektWh :=0;	
+				husEffektW :=0;	
 				FOR n :=0 TO 2 DO
 						timDataMomentan.HusetEnergi:= timDataMomentan.HusetEnergi+ (stHusetsDataMomentan[n].power/144000);		//Accumulerad Energi, nollställs varje timme
-						husEffektWh := husEffektWh+ stHusetsDataMomentan[n].power;					//tillfällig effekt
+						husEffektW := husEffektW+ stHusetsDataMomentan[n].power;					//tillfällig effekt
 	
 						
 					END_FOR
 						//skriv in i Struct
 					
 				
-					IF timDataMomentan.leagstaHusEffekt> husEffektWh/1000 THEN 	
-					timDataMomentan.leagstaHusEffekt:=husEffektWh/1000;
+					IF timDataMomentan.leagstaHusEffekt> husEffektW THEN 	
+					timDataMomentan.leagstaHusEffekt:=husEffektW;
 					END_IF
 				
-					IF timDataMomentan.hoegstaHusEffekt< husEffektWh/1000  THEN 	
-					timDataMomentan.hoegstaHusEffekt:= husEffektWh/1000;
+					IF timDataMomentan.hoegstaHusEffekt< husEffektW  THEN 	
+					timDataMomentan.hoegstaHusEffekt:= husEffektW;
 					END_IF
 					
 					

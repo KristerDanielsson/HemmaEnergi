@@ -13,12 +13,12 @@ STRUCT
 	HusetEnergi : REAL; //kWh
 
 //Effekt 
-	toppNettoEffekt	: 		REAL:= -10000 ;//kW
-	laegstaNettoEffekt: 	REAL:=10000 ;//kW
-	leagstaSolEffekt:	REAL:=10000 ;//kW
-	hoegstaSolEffekt:	REAL:= -10000 ;//kW
-	leagstaHusEffekt:	REAL	:=10000 ;//kW
-	hoegstaHusEffekt:	REAL:= -10000 ;//kW
+	toppNettoEffekt	: 		REAL:= -10000 ;//W
+	laegstaNettoEffekt: 	REAL:=10000 ;//W
+	leagstaSolEffekt:	REAL:=10000 ;//W
+	hoegstaSolEffekt:	REAL:= -10000 ;//W
+	leagstaHusEffekt:	REAL	:=10000 ;//W
+	hoegstaHusEffekt:	REAL:= -10000 ;//W
 
 	
 //Ekonomi

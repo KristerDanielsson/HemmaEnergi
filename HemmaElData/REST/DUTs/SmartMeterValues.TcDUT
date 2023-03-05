@@ -14,32 +14,32 @@ STRUCT
     mqtt_server: STRING;
     blynk_configured: STRING;
     Equipment_Id:STRING;
-    GasEquipment_Id:STRING;
-    ElectricityTariff:STRING;
-    EnergyDeliveredTariff1:STRING;
-    EnergyReturnedTariff1: STRING;
-    EnergyDeliveredTariff2: STRING;
-    EnergyReturnedTariff2: STRING;
-    EnergyDelivered: STRING;
-    EnergyReturned: STRING;
-    PowerDelivered_total:STRING;
-    PowerReturned_total: STRING;
-    PowerDelivered_l1: STRING;
-    PowerDelivered_l2: STRING;
-    PowerDelivered_l3: STRING;
-    PowerReturned_l1: STRING;
-    PowerReturned_l2: STRING;
-    PowerReturned_l3: STRING;
-    Voltage_l1: STRING;
-    Voltage_l2: STRING;
-    Voltage_l3: STRING;
-    Current_l1: STRING;
-    Current_l2: STRING;
-    Current_l3: STRING;
-    GasDelivered: STRING;
-    GasDeliveredHour: STRING;
-    PowerDeliveredHour: STRING;
-    PowerDeliveredNetto: STRING;
+    GasEquipment_Id:STRING;  //ej använd
+    ElectricityTariff:STRING;  //ej använd
+    EnergyDeliveredTariff1:STRING; //Wh
+    EnergyReturnedTariff1: STRING;  //Wh
+    EnergyDeliveredTariff2: STRING;  //Wh
+    EnergyReturnedTariff2: STRING;  //Wh
+    EnergyDelivered: STRING; //Wh
+    EnergyReturned: STRING; //Wh
+    PowerDelivered_total:STRING; //W   ----- Denna används
+    PowerReturned_total: STRING; //W   ----- Denna används
+    PowerDelivered_l1: STRING; //W
+    PowerDelivered_l2: STRING; //W
+    PowerDelivered_l3: STRING; //W
+    PowerReturned_l1: STRING; //W
+    PowerReturned_l2: STRING; //W
+    PowerReturned_l3: STRING; //W
+    Voltage_l1: STRING;  //V
+    Voltage_l2: STRING; //V
+    Voltage_l3: STRING;//V
+    Current_l1: STRING; //Amp
+    Current_l2: STRING; //Amp
+    Current_l3: STRING; //Amp
+    GasDelivered: STRING;  //ej använd
+    GasDeliveredHour: STRING;  //ej använd
+    PowerDeliveredHour: STRING;  //ej använd
+    PowerDeliveredNetto: STRING;  //W   ----- Denna används
 
 	
 END_STRUCT

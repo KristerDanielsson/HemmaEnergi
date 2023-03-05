@@ -5,7 +5,7 @@
 VAR_GLOBAL
 	HusetsElfoerbrukning: ARRAY[0..23] OF HusetsElfoerbrukning;
 	
-	timData: ARRAY[0..87600] OF ST_timData;
+	
 	
 	//Från EON
 	ElOeverfoeringsAvgiftEonKWh: 	REAL:= 0.2645;			// Mars 2023
@@ -21,6 +21,10 @@ VAR_GLOBAL
 	//Från Staten
 	SkatteAvdragKWh:	REAL:= 0.60;
 	
+END_VAR
+
+VAR_GLOBAL PERSISTENT
+	timData: ARRAY[0..87600] OF ST_timData;   
 END_VAR]]></Declaration>
   </GVL>
 </TcPlcObject>

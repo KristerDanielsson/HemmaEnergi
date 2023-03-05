@@ -151,7 +151,7 @@ END_CASE
 
 //Stoppa in dygnets elpriser
 FOR i:= timIndex TO (timIndex+23) DO
-	GVL.timData[i-9].timPris:= elpriserTimme[i-timIndex].SEK_per_kWh;
+	GVL.timData[i].timPris:= elpriserTimme[i-timIndex].SEK_per_kWh;
 END_FOR
 //timDataMomentan.timPris:= 
 ]]></ST>
