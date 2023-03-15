@@ -3,6 +3,7 @@
   <POU Name="BraAttHa" Id="{de115610-19ec-4aec-809c-058bd69aa67c}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK BraAttHa
 VAR_INPUT
+	timData: REFERENCE TO ARRAY[0..87600] OF ST_timData;
 END_VAR
 VAR_OUTPUT
 END_VAR
@@ -22,6 +23,7 @@ VAR
     sLogTimeWithMs  : STRING;
     stSystemTime    : TIMESTRUCT;
     fbLocalTime     : FB_LocalSystemTime;
+	bTestRef1: BOOL;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -52,7 +54,10 @@ ELSE
         sMs := TIME_TO_STRING(tBufferTime);
         sLogTimeWithMs := CONCAT(sLogTime,sMs);
     END_IF
-END_IF]]></ST>
+END_IF
+
+//Kolla om en REFERENCE-variabel är VALID. Är den inte det så kolla om den är med i anropet av FB:t
+		bTestRef1  := __ISVALIDREF(timData);]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

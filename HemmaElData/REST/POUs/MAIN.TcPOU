@@ -6,7 +6,7 @@ VAR
 	// trigger command execution for Postman-Echo samples
 		bGet10sek, bGet24h,bGetSMHI	: BOOL;
 
-	fbHttpClientEonMaetare			: FB_IotHttpClient :=(sHostName:='192.168.68.61',   //connectix_smartmeter.local
+	fbHttpClientEonMaetare			: FB_IotHttpClient :=(sHostName:='connectix_smartmeter.local',   // 192.168.68.61
 								  	bKeepAlive:=TRUE, tConnectionTimeout:=T#20S);
 									
 	fbHttpClientHuset			: FB_IotHttpClient :=(sHostName:='192.168.68.58', //Husets El - Shelly
@@ -64,17 +64,23 @@ VAR
 	bBusyEon: BOOL;
 	
 	RisingEdge			: R_TRIG;
-	nettoEffektW: 			REAL;	//W
+	nettoEffektW: 			REAL;	//W. Till nätet blir minus och plus från nätet
 	husEffektW: 			REAL;	//W
+	solEffektW: 			REAL;	//W
 	sparadEffektW: 			REAL;	//W
 
 	fbWritePersistent: FB_WritePersistentData;
 	bWritePersistent: BOOL;
+
+	fel: UDINT;
+	upptagen2: BOOL;
+	bErrorCount: INT;
 END_VAR
 
 VAR PERSISTENT
 	timIndex: INT;    					 //remanent   //Från 0 till 87000 = 10 år
 	timDataMomentan:ST_timData;  //accumulerar värden som sedan skall skrivas till rätt timme
+	timData: ARRAY[0..87600] OF ST_timData;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -118,14 +124,16 @@ END_IF
 
 RisingEdge(CLK:= NOT bGet10sek );
 IF  RisingEdge.Q THEN
-	nettoEffektW:= husEffektW-nettoEffektW;
-	
-	IF nettoEffektW>0 AND nettoEffektW < husEffektW THEN
+	solEffektW:= husEffektW-nettoEffektW;
+	IF solEffektW > husEffektW THEN
 		sparadEffektW:=husEffektW;
-	ELSIF nettoEffektW>0 AND nettoEffektW < husEffektW THEN
-		sparadEffektW:=nettoEffektW;
-	ELSIF nettoEffektW<= 0 THEN
+	ELSIF solEffektW>0 AND solEffektW < husEffektW THEN
+		sparadEffektW:=solEffektW;
+	ELSIF solEffektW<= 0 THEN
 		sparadEffektW:=0;
+	ELSE
+		bErrorCount:=bErrorCount+1;
+		
 	END_IF
 	
 	
@@ -135,7 +143,7 @@ IF  RisingEdge.Q THEN
 					timDataMomentan.hoegstaSolEffekt:= nettoEffektW;
 				END_IF
 
-	timDataMomentan.timPris:= GVL.timData[timIndex].timPris;
+	timDataMomentan.timPris:= timData[timIndex].timPris;
 
 	//Räkna ut pengar en gång per sampel (10s)
 	timDataMomentan.sparatSolceller:= timDataMomentan.sparatSolceller + sparadEffektW/144000*(timDataMomentan.timPris+GVL.ElOeverfoeringsAvgiftEonKWh+GVL.EnergiskattKWh+GVL.MomsKWh+GVL.PaaslagMinusRabattKWh);
@@ -148,19 +156,25 @@ END_IF
 // init client parameters at startup
 IF NOT fbHttpClientElpriset.bConfigured THEN 
 	fbHttpClientElpriset.stTLS.sVersion:='tlsv1.3';
-
-	
 END_IF
-IF fbHttpClientElpriset.bConfigured THEN 
-	
-	IF timme= 0 THEN
-		bGet24h:= TRUE;
-	ELSE 
-		bGet24h:= FALSE;
-	END_IF
-	
-	fbHttpGetElpriset(bSend:=bGet24h, fbClient:=fbHttpClientElpriset, stringDatumTid:=stringDatumTid, timIndex:=timIndex);
+
+
+IF fbHttpClientSMHI.bConfigured THEN 
+	fbHttpGetSMHI(bSend:=bGet24h, fbClient:=fbHttpClientSMHI, timIndex:=timIndex, timDataMomentan:=timDataMomentan, timData:=timData);
 END_IF 
+
+
+IF fbHttpClientElpriset.bConfigured THEN 
+	fbHttpGetElpriset(bSend:=bGet24h, fbClient:=fbHttpClientElpriset, stringDatumTid:=stringDatumTid, timIndex:=timIndex, timData:=timData);	
+END_IF 
+
+
+IF timme= 0 THEN
+		bGet24h:= TRUE;
+ELSE
+		bGet24h:= FALSE;
+END_IF
+
 
 fbHttpClientElpriset.Execute();
 
@@ -170,12 +184,8 @@ fbHttpClientElpriset.Execute();
 // init client parameters at startup
 IF NOT fbHttpClientSMHI.bConfigured THEN 
 	fbHttpClientSMHI.nHostPort:= 80;
-	
-	
 END_IF
-IF fbHttpClientSMHI.bConfigured THEN 
-	fbHttpGetSMHI(bSend:=bGetSMHI, fbClient:=fbHttpClientSMHI);
-END_IF 
+	
 
 fbHttpClientSMHI.Execute();
 
@@ -193,30 +203,28 @@ fbHttpClientSMHI.Execute();
 	stringTimme:=MID(stringDatumTid, 2, 15);
 	timme:= STRING_TO_INT(stringTimme);
 
+
+
+
 // Logga data en gång i timmen
-
-
-bWritePersistent:= FALSE;
-
 IF timme <> timmeloggad THEN
 	bWritePersistent:= TRUE;
 	timmeloggad:=timme;
 	timIndex:=timIndex+1;
- 
-
-//Data som skall in i struct
+	
+ //Data som skall in i struct
 	timDataMomentan.DatumTid:=datumTimmeDT;
 	LoggaTimData();
-
-	
-//Skriva persistent en gång i timmen
-	fbWritePersistent(START:=bWritePersistent,PORT:=851,BUSY=>upptagen);
-
-
+ELSE
+	bWritePersistent:= FALSE;
 END_IF
 
+//Skriva persistent en gång i timmen
+	fbWritePersistent(START:=bWritePersistent,TMOUT:=DEFAULT_ADS_TIMEOUT,PORT:=851,BUSY=>upptagen2, ERRID=>fel);
 
-
+	IF upptagen2 THEN
+		nisse:=nisse+1;
+	END_IF
 
 ]]></ST>
     </Implementation>
@@ -256,47 +264,47 @@ END_VAR]]></Declaration>
         <ST><![CDATA[
 
 	
-	GVL.timData[timIndex].DatumTid:=timDataMomentan.DatumTid;
+	timData[timIndex].DatumTid:=timDataMomentan.DatumTid;
 	
-	//GVL.timData[timIndex].timPris:= timDataMomentan.timPris;   Kommer från FB:t som hämtar Elpriser
+	//timData[timIndex].timPris:= timDataMomentan.timPris;   Kommer från FB:t som hämtar Elpriser
 	
-	GVL.timData[timIndex].nettoEnergi:=timDataMomentan.nettoEnergi;   //Energi in eller ut till nätet.  //klar
+	timData[timIndex].nettoEnergi:=timDataMomentan.nettoEnergi;   //Energi in eller ut till nätet.  //klar
 	timDataMomentan.nettoEnergi:=0;
 	
-	GVL.timData[timIndex].saaldEnergi:=timDataMomentan.saaldEnergi;    //klar
+	timData[timIndex].saaldEnergi:=timDataMomentan.saaldEnergi;    //klar
 	timDataMomentan.saaldEnergi:=0;
 	
-	GVL.timData[timIndex].KoeptEnergi:=timDataMomentan.KoeptEnergi;   //klar
+	timData[timIndex].KoeptEnergi:=timDataMomentan.KoeptEnergi;   //klar
 	timDataMomentan.KoeptEnergi:=0;
 	
-	GVL.timData[timIndex].toppNettoEffekt:=timDataMomentan.toppNettoEffekt;    //klar
+	timData[timIndex].toppNettoEffekt:=timDataMomentan.toppNettoEffekt;    //klar
 	timDataMomentan.toppNettoEffekt:=0;
 	
-	GVL.timData[timIndex].laegstaNettoEffekt:=timDataMomentan.laegstaNettoEffekt;    //klar
+	timData[timIndex].laegstaNettoEffekt:=timDataMomentan.laegstaNettoEffekt;    //klar
 	timDataMomentan.laegstaNettoEffekt:=0;
 	
 	
-	GVL.timData[timIndex].leagstaSolEffekt:=timDataMomentan.leagstaSolEffekt;    //klar
+	timData[timIndex].leagstaSolEffekt:=timDataMomentan.leagstaSolEffekt;    //klar
 	timDataMomentan.leagstaSolEffekt:=0;
 	
-	GVL.timData[timIndex].hoegstaSolEffekt:=timDataMomentan.hoegstaSolEffekt;     //klar
+	timData[timIndex].hoegstaSolEffekt:=timDataMomentan.hoegstaSolEffekt;     //klar
 	timDataMomentan.hoegstaSolEffekt:=0;
 	
-	GVL.timData[timIndex].leagstaHusEffekt:=timDataMomentan.leagstaHusEffekt;    //klar
+	timData[timIndex].leagstaHusEffekt:=timDataMomentan.leagstaHusEffekt;    //klar
 	timDataMomentan.leagstaHusEffekt:=0;
 	
-	GVL.timData[timIndex].hoegstaHusEffekt:=timDataMomentan.hoegstaHusEffekt;     //klar
+	timData[timIndex].hoegstaHusEffekt:=timDataMomentan.hoegstaHusEffekt;     //klar
 	timDataMomentan.hoegstaHusEffekt:=0;
 	
-	GVL.timData[timIndex].avbetalningSolceller:=timDataMomentan.avbetalningSolceller;  //Skall inte nollställas
+	timData[timIndex].avbetalningSolceller:=timDataMomentan.avbetalningSolceller;  //Skall inte nollställas
 
 	
-	GVL.timData[timIndex].sparatSolceller:=timDataMomentan.sparatSolceller;  //Skall inte nollställas
+	timData[timIndex].sparatSolceller:=timDataMomentan.sparatSolceller;  //Skall inte nollställas
 
 	
-	GVL.timData[timIndex].saaltSolceller:=timDataMomentan.saaltSolceller;  //Skall inte nollställas
+	timData[timIndex].saaltSolceller:=timDataMomentan.saaltSolceller;  //Skall inte nollställas
 	
-	GVL.timData[timIndex].HusetEnergi:= timDataMomentan.HusetEnergi;  //accumulerad 1 timme
+	timData[timIndex].HusetEnergi:= timDataMomentan.HusetEnergi;  //accumulerad 1 timme
 	timDataMomentan.HusetEnergi:=0;
 	
 

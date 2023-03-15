@@ -3,8 +3,9 @@
   <POU Name="FB_HTTP_Get_Elpris" Id="{f266cfe8-b744-4fee-93c9-afadbb6020cc}" SpecialFunc="None">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_HTTP_Get_Elpris
 VAR_INPUT
-	bSend				: BOOL;
+	bSend			: BOOL;
 	timDataMomentan:REFERENCE TO ST_timData;
+	timData: REFERENCE TO ARRAY[0..87600] OF ST_timData;
 	stringDatumTid: STRING;
 	timIndex: REFERENCE TO INT;
 END_VAR
@@ -16,7 +17,7 @@ VAR_OUTPUT
 	bError				: BOOL;
 END_VAR
 VAR
-	
+		elpriserTimme: ARRAY[0..23] OF ST_elpriserTimme; //från elpriserjustnu.se
 	fbRequest			: FB_IotHttpRequest;
 
 	fbJson				: FB_JsonDomParser;
@@ -60,19 +61,25 @@ VAR
 	sJsonArray			:SJsonValue;
 
 	SCopiedJson: STRING(200);
-	elpriserTimme: ARRAY[0..23] OF ST_elpriserTimme; //från elpriserjustnu.se
+
 	
 	sUri: STRING(255);
 	stringDatum: STRING(255);
 	stringAar: STRING(255);
 	i: INT;
+	nisses: REAL;
+	kalle: INT;
+	sldg: REAL;
+	bTestRef1: BOOL;
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[RisingEdge(CLK:= bSend );
+
+
 CASE nState OF
 0:	
 	IF RisingEdge.Q THEN 
-	
+	kalle:=kalle+1;
 		 
 			stringAar:=MID(stringDatumTid, 4, 4);
 				stringDatum:=MID(stringDatumTid, 5, 9);
@@ -129,12 +136,21 @@ CASE nState OF
 				
 			(*	
 				//Kopiera hela den importerade JSON-formaterade datasträngen och lägg i en motsvarande TwinCAT-struktur
-				IF fbJsonDataType.SetSymbolFromJson(sContent, 'ST_elpriserJustNu24Timmar', SIZEOF(GVL.elpriserTimme), ADR(GVL.elpriserTimme), hrErrorCode=> felkod) THEN
+				IF fbJsonDataType.SetSymbolFromJson(sContent, 'ST_elpriserJustNu24Timmar', SIZEOF(elpriserTimme), ADR(elpriserTimme), hrErrorCode=> felkod) THEN
 						bError:= FALSE;
 				END_IF	
 		*)
 		
+		//Stoppa in dygnets elpriser
+
+		
+FOR i:= 0 TO (23) DO
+	timData[timIndex+i].timPris:= elpriserTimme[i].SEK_per_kWh;
+	//sldg:= elpriserTimme[i].SEK_per_kWh;
+END_FOR
+
 				nResCount:= nResCount+1 ;	
+				
 
 			END_IF
 		END_IF
@@ -149,11 +165,6 @@ END_IF
 
 END_CASE
 
-//Stoppa in dygnets elpriser
-FOR i:= timIndex TO (timIndex+23) DO
-	GVL.timData[i].timPris:= elpriserTimme[i-timIndex].SEK_per_kWh;
-END_FOR
-//timDataMomentan.timPris:= 
 ]]></ST>
     </Implementation>
   </POU>

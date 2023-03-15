@@ -201,9 +201,7 @@ END_VAR]]></Declaration>
 	
 						
 					END_FOR
-						//skriv in i Struct
-					
-				
+						//skriv in i Struct				
 					IF timDataMomentan.leagstaHusEffekt> husEffektW THEN 	
 					timDataMomentan.leagstaHusEffekt:=husEffektW;
 					END_IF

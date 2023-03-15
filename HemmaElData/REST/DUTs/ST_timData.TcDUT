@@ -26,7 +26,11 @@ STRUCT
 	sparatSolceller		:	REAL; 	//kr -solel till hushållet
 	saaltSolceller 		: 	REAL; 	//kr -spotpris plus 60 öre skatteavdrag
 	Koept				:	REAL;    //kr 
-	
+
+//Väderdata
+	Temperatur			:  REAL;    //	°C
+	VindGenomsnitt		: REAL;		// m/s
+
 END_STRUCT
 END_TYPE
 ]]></Declaration>

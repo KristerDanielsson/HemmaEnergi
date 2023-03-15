@@ -48,36 +48,32 @@
       <SubType>Code</SubType>
       <LinkAlways>true</LinkAlways>
     </Compile>
-    <Compile Include="GVLs\GVL_SMHI.TcGVL">
-      <SubType>Code</SubType>
-      <LinkAlways>true</LinkAlways>
-    </Compile>
     <Compile Include="PlcTask.TcTTO">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="POUs\MAIN.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\SmartMeter\BraAttHa.TcPOU">
+    <Compile Include="POUs\GET\BraAttHa.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\SmartMeter\FB_HTTP_Get_SmartMeter.TcPOU">
+    <Compile Include="POUs\GET\FB_HTTP_Get_SmartMeter.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\SmartMeter\FB_HTTP_Get_Elpris.TcPOU">
+    <Compile Include="POUs\GET\FB_HTTP_Get_Elpris.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\SmartMeter\FB_HTTP_Get_Huset.TcPOU">
+    <Compile Include="POUs\GET\FB_HTTP_Get_Huset.TcPOU">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="POUs\SmartMeter\FB_HTTP_Get_SMHI.TcPOU">
+    <Compile Include="POUs\GET\FB_HTTP_Get_SMHI.TcPOU">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DUTs" />
     <Folder Include="GVLs" />
-    <Folder Include="POUs\SmartMeter" />
+    <Folder Include="POUs\GET" />
     <Folder Include="VISUs" />
     <Folder Include="POUs" />
   </ItemGroup>
