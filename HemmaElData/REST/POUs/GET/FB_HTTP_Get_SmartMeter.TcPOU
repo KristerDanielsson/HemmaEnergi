@@ -4,7 +4,8 @@
     <Declaration><![CDATA[FUNCTION_BLOCK FB_HTTP_Get_SmartMeter
 VAR_INPUT
 	bSend				: BOOL;
-	timDataMomentan:REFERENCE TO ST_timData;
+	timData: REFERENCE TO ARRAY[0..87600] OF ST_timData;
+	timIndex: REFERENCE TO INT;
 	nettoEffektW:REFERENCE TO REAL;
 END_VAR
 VAR_IN_OUT
@@ -16,7 +17,6 @@ VAR_OUTPUT
 END_VAR
 VAR
 	fbRequest			: FB_IotHttpRequest;
-	fbJson				: FB_JsonDomParser;
 	
 		fbJsonDataType	: FB_JsonReadWriteDataType;
 		felkod			: HRESULT;			
@@ -28,26 +28,13 @@ VAR
 	sContent			: STRING(1100);
 	
 	bGetJsonResult		: BOOL;
-	jsonDoc				: SJsonValue;
-	jsonVal				: SJsonValue;
-	sResultValue		: STRING;
 	
 	nReqCount			: UDINT;	
 	nResCount			: UDINT;
 	nValidResCount		: UDINT;
 	nErrCount			: UDINT;
-	Vaerde: LINT;
-	
-	KoeptEffektW: REAL;
-	SaaldEffektW: REAL;
 
-	Effektlaegsta: REAL :=100000.0 ;
-	Effekthoegsta: REAL;
-	NettoEnergiAccumulerat: REAL;
-	SaaldEnergiAccumulerat: REAL;
-	KoeptEnergiAccumulerat: REAL;
 
-	Funkar: BOOL;
 	nisse: REAL;
 	stSmartDataMomentan: SmartMeterValues;
 	nisse1: REAL;
@@ -60,7 +47,7 @@ END_VAR]]></Declaration>
 CASE nState OF
 0:	
 	IF RisingEdge.Q THEN 
-		IF Funkar:= fbRequest.SendRequest(sUri:='/smartmeter/api/read', fbClient:=fbClient, eRequestType:=ETcIotHttpRequestType.HTTP_Get, 0, 0, 0) THEN				
+		IF fbRequest.SendRequest(sUri:='/smartmeter/api/read', fbClient:=fbClient, eRequestType:=ETcIotHttpRequestType.HTTP_Get, 0, 0, 0) THEN				
 		
 		nState:= 1;
 			nReqCount:= nReqCount+1;
@@ -91,22 +78,25 @@ CASE nState OF
 			//räkna ut lägsta och högsta effekt
 			IF felkod = 0 THEN
 					
-				//timDataMomentan.nettoEnergi := STRING_TO_REAL(stSmartDataMomentan.PowerDeliveredNetto);
-				KoeptEffektW:= STRING_TO_REAL(stSmartDataMomentan.PowerReturned_total);
-				KoeptEffektW := STRING_TO_REAL(stSmartDataMomentan.PowerDelivered_total);
+
 				nettoEffektW:= STRING_TO_REAL(stSmartDataMomentan.PowerDeliveredNetto);
+				
 				
 			END_IF	
 			
 				//skriv in i Struct
-				timDataMomentan.nettoEnergi:= timDataMomentan.nettoEnergi+ (nettoEffektW/144000);    //144 sampel per timme
-				timDataMomentan.saaldEnergi:= timDataMomentan.saaldEnergi+ (SaaldEffektW/144000);   //144 sampel per timme
-				timDataMomentan.KoeptEnergi:= timDataMomentan.KoeptEnergi+(KoeptEffektW/144000);   //144 sampel per timme
+				timData[timIndex].nettoEnergi:= timData[timIndex].nettoEnergi+ (nettoEffektW/144000);    //144 sampel per timme
 				
-				IF timDataMomentan.laegstaNettoEffekt> nettoEffektW THEN 	
-					timDataMomentan.laegstaNettoEffekt:=nettoEffektW;
-				ELSIF timDataMomentan.toppNettoEffekt< nettoEffektW THEN 	
-					timDataMomentan.toppNettoEffekt:=nettoEffektW;			
+				IF nettoEffektW >0 THEN
+					timData[timIndex].KoeptEnergi:= timData[timIndex].KoeptEnergi+(nettoEffektW/144000);   //144 sampel per timme
+				ELSE
+						timData[timIndex].saaldEnergi:= timData[timIndex].saaldEnergi- (nettoEffektW/144000);   //144 sampel per timme
+				END_IF
+				
+				IF timData[timIndex].laegstaNettoEffekt> nettoEffektW THEN 	
+					timData[timIndex].laegstaNettoEffekt:=nettoEffektW;
+				ELSIF timData[timIndex].toppNettoEffekt< nettoEffektW THEN 	
+					timData[timIndex].toppNettoEffekt:=nettoEffektW;			
 				END_IF
 			
 				nResCount:= nResCount+1;			
@@ -121,10 +111,11 @@ CASE nState OF
 	END_IF  	
 
 2:   //Räkna ut pengar
-timDataMomentan.saaltSolceller:= timDataMomentan.saaltSolceller+(SaaldEffektW/144000*(timDataMomentan.timPris+GVL.NaetNyttaKWh+GVL.SkatteAvdragKWh));  //Sålt i kr
-
-timDataMomentan.Koept:= timDataMomentan.Koept + KoeptEffektW/144000*(timDataMomentan.timPris+GVL.ElOeverfoeringsAvgiftEonKWh+GVL.EnergiskattKWh+GVL.MomsKWh+GVL.PaaslagMinusRabattKWh);
-
+IF nettoEffektW >0 THEN
+	timData[timIndex].Koept:= timData[timIndex].Koept + nettoEffektW/144000*(timData[timIndex].timPris+GVL.ElOeverfoeringsAvgiftEonKWh+GVL.EnergiskattKWh+GVL.MomsKWh+GVL.PaaslagMinusRabattKWh);
+ELSE
+	timData[timIndex].saaltSolceller:= timData[timIndex].saaltSolceller-(nettoEffektW/144000*(timData[timIndex].timPris+GVL.NaetNyttaKWh+GVL.SkatteAvdragKWh));  //Sålt i kr
+END_IF
 
 
 nState:= 0;

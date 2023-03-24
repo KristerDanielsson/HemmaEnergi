@@ -4,7 +4,7 @@
     <Declaration><![CDATA[FUNCTION_BLOCK FB_HTTP_Get_Elpris
 VAR_INPUT
 	bSend			: BOOL;
-	timDataMomentan:REFERENCE TO ST_timData;
+	//:REFERENCE TO ST_timData;
 	timData: REFERENCE TO ARRAY[0..87600] OF ST_timData;
 	stringDatumTid: STRING;
 	timIndex: REFERENCE TO INT;
@@ -125,15 +125,10 @@ CASE nState OF
 					nSize:= LIMIT(1, fbJson.GetArraySize(jsonDoc), 100);
 					
 					FOR nIndex:= 0 TO (nSize-1) DO   //Alltid 0-23 timmar
-						
 						sJsonArrayIndex:= fbJson.GetArrayValueByIdx(jsonDoc, nIndex);
-						
 						fbJson.CopyJson(sJsonArrayIndex, SCopiedJson, SIZEOF(SCopiedJson));
-						
 						fbJsonDataType.SetSymbolFromJson(sCopiedJson, 'ST_elpriserTimme', SIZEOF(elpriserTimme[nIndex]), ADR(elpriserTimme[nIndex]));
-												
 					END_FOR
-				
 			(*	
 				//Kopiera hela den importerade JSON-formaterade datasträngen och lägg i en motsvarande TwinCAT-struktur
 				IF fbJsonDataType.SetSymbolFromJson(sContent, 'ST_elpriserJustNu24Timmar', SIZEOF(elpriserTimme), ADR(elpriserTimme), hrErrorCode=> felkod) THEN

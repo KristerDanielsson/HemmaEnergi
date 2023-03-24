@@ -4,7 +4,9 @@
     <Declaration><![CDATA[FUNCTION_BLOCK FB_HTTP_Get_Huset
 VAR_INPUT
 	bSend				: BOOL;
-	timDataMomentan:REFERENCE TO ST_timData;
+	//timDataMomentan:REFERENCE TO ST_timData;
+		timData: REFERENCE TO ARRAY[0..87600] OF ST_timData;
+		timIndex: REFERENCE TO INT;
 	husEffektW:REFERENCE TO REAL;
 END_VAR
 VAR_IN_OUT
@@ -196,18 +198,18 @@ END_VAR]]></Declaration>
 				
 				husEffektW :=0;	
 				FOR n :=0 TO 2 DO
-						timDataMomentan.HusetEnergi:= timDataMomentan.HusetEnergi+ (stHusetsDataMomentan[n].power/144000);		//Accumulerad Energi, nollställs varje timme
+						timData[timIndex].HusetEnergi:= timData[timIndex].HusetEnergi+ (stHusetsDataMomentan[n].power/144000);		//Accumulerad Energi, nollställs varje timme
 						husEffektW := husEffektW+ stHusetsDataMomentan[n].power;					//tillfällig effekt
 	
 						
 					END_FOR
 						//skriv in i Struct				
-					IF timDataMomentan.leagstaHusEffekt> husEffektW THEN 	
-					timDataMomentan.leagstaHusEffekt:=husEffektW;
+					IF timData[timIndex].leagstaHusEffekt> husEffektW THEN 	
+					timData[timIndex].leagstaHusEffekt:=husEffektW;
 					END_IF
 				
-					IF timDataMomentan.hoegstaHusEffekt< husEffektW  THEN 	
-					timDataMomentan.hoegstaHusEffekt:= husEffektW;
+					IF timData[timIndex].hoegstaHusEffekt< husEffektW  THEN 	
+					timData[timIndex].hoegstaHusEffekt:= husEffektW;
 					END_IF
 					
 					

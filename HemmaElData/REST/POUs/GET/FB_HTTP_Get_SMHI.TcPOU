@@ -4,7 +4,7 @@
     <Declaration><![CDATA[FUNCTION_BLOCK FB_HTTP_Get_SMHI
 VAR_INPUT
 	bSend				: BOOL;
-	timDataMomentan:REFERENCE TO ST_timData;
+	//timDataMomentan:REFERENCE TO ST_timData;
 	timData: REFERENCE TO ARRAY[0..87600] OF ST_timData;
 	timIndex: REFERENCE TO INT;
 END_VAR
@@ -97,7 +97,7 @@ CASE nState OF
 												
 					END_FOR
 
-				FOR i:=0 TO 23 DO
+				FOR i:=1 TO 24 DO    // timeseries[0] brukar vara kl 23 föregående dygn
 					FOR p:=0 TO 18 DO
 						IF	timeseries[i].parameters[p].name = 't' THEN
 							timData[timIndex+i].Temperatur:= timeseries[i].parameters[p].values[0];

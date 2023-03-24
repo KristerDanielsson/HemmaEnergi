@@ -3,32 +3,84 @@
   <DUT Name="ST_timData" Id="{89f4f7a9-5afd-4ba8-aac7-dc6738e55e4e}">
     <Declaration><![CDATA[TYPE ST_timData :
 STRUCT
+	{attribute 'iot.DisplayName' := 'Timme'}
 	DatumTid	: DT;		
+	{attribute 'iot.DisplayName' := 'Pris'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := 'kr'}
 	timPris		:	REAL;	//inklusive moms
 
 //Energi
+{attribute 'iot.DisplayName' := 'Netto energi'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := 'kWh'}
 	nettoEnergi	: REAL;	//kWh
+{attribute 'iot.DisplayName' := 'Såld energi'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := 'kWh'}
 	saaldEnergi	: REAL;	//kWh
+{attribute 'iot.DisplayName' := 'Köpt energi'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := 'kWh'}
 	KoeptEnergi	: REAL; //kWh
+{attribute 'iot.DisplayName' := 'Husets energi'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := 'kWh'}
 	HusetEnergi : REAL; //kWh
 
 //Effekt 
+{attribute 'iot.DisplayName' := 'Topp nettoeffekt'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := 'W'}
 	toppNettoEffekt	: 		REAL:= -10000 ;//W
+	{attribute 'iot.DisplayName' := 'Lägsta nettoeffekt'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := 'W'}
 	laegstaNettoEffekt: 	REAL:=10000 ;//W
+	{attribute 'iot.DisplayName' := 'Lägsta soleffekt'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := 'W'}
 	leagstaSolEffekt:	REAL:=10000 ;//W
+	{attribute 'iot.DisplayName' := 'Högsta soleffekt'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := 'W'}
 	hoegstaSolEffekt:	REAL:= -10000 ;//W
+	{attribute 'iot.DisplayName' := 'Lägsta huseffekt'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := 'W'}
 	leagstaHusEffekt:	REAL	:=10000 ;//W
+	{attribute 'iot.DisplayName' := 'Högsta huseffekt'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := 'W'}
 	hoegstaHusEffekt:	REAL:= -10000 ;//W
 
 	
 //Ekonomi
+	{attribute 'iot.DisplayName' := 'Avbetalning solceller'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := '´kr'}
 	avbetalningSolceller	: 	REAL; 	//kr -besparing och såld el
+		{attribute 'iot.DisplayName' := 'Sparat solceller'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := '´kr'}
 	sparatSolceller		:	REAL; 	//kr -solel till hushållet
+		{attribute 'iot.DisplayName' := 'Sålt'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := '´kr'}
 	saaltSolceller 		: 	REAL; 	//kr -spotpris plus 60 öre skatteavdrag
+		{attribute 'iot.DisplayName' := 'Köpt'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := '´kr'}
 	Koept				:	REAL;    //kr 
 
 //Väderdata
+	{attribute 'iot.DisplayName' := 'Temperatur'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := '´°C'}
 	Temperatur			:  REAL;    //	°C
+		{attribute 'iot.DisplayName' := 'VindGenomsnitt'}
+	{attribute 'iot.DecimalPrecision' := '2'}
+	{attribute 'iot.Unit' := '´m/s'}
 	VindGenomsnitt		: REAL;		// m/s
 
 END_STRUCT

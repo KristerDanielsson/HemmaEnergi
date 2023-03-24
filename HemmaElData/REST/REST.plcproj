@@ -17,6 +17,15 @@
     <LibraryReferences>{47ce852c-0293-4042-81d9-b9764c926ecc}</LibraryReferences>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="DUTs\Communicator\Appdata.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\Communicator\ST_SampleData.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DUTs\Communicator\ST_SampleData_Nested.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="DUTs\HusetsElfoerbrukning.TcDUT">
       <SubType>Code</SubType>
     </Compile>
@@ -51,6 +60,9 @@
     <Compile Include="PlcTask.TcTTO">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="POUs\GET\AppCommunicator.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="POUs\MAIN.TcPOU">
       <SubType>Code</SubType>
     </Compile>
@@ -72,6 +84,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DUTs" />
+    <Folder Include="DUTs\Communicator" />
     <Folder Include="GVLs" />
     <Folder Include="POUs\GET" />
     <Folder Include="VISUs" />
@@ -93,6 +106,10 @@
     <PlaceholderReference Include="Tc3_IotBase">
       <DefaultResolution>Tc3_IotBase, * (Beckhoff Automation GmbH)</DefaultResolution>
       <Namespace>Tc3_IotBase</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc3_IotCommunicator">
+      <DefaultResolution>Tc3_IotCommunicator, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc3_IotCommunicator</Namespace>
     </PlaceholderReference>
     <PlaceholderReference Include="Tc3_JsonXml">
       <DefaultResolution>Tc3_JsonXml, * (Beckhoff Automation GmbH)</DefaultResolution>

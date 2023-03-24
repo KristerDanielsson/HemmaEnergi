@@ -24,6 +24,9 @@ VAR
     stSystemTime    : TIMESTRUCT;
     fbLocalTime     : FB_LocalSystemTime;
 	bTestRef1: BOOL;
+	nisse: BOOL;
+	
+	arraydata: ARRAY[0..9] OF ST_elpriserTimme;
 END_VAR
 ]]></Declaration>
     <Implementation>
@@ -57,7 +60,13 @@ ELSE
 END_IF
 
 //Kolla om en REFERENCE-variabel är VALID. Är den inte det så kolla om den är med i anropet av FB:t
-		bTestRef1  := __ISVALIDREF(timData);]]></ST>
+		bTestRef1  := __ISVALIDREF(timData);
+		
+		
+		IF nisse THEN
+	MEMCPY(ADR(arraydata[0]),ADR(arraydata[1]), SIZEOF(arraydata[1])); //Kopiera en hel strukt på en gång. 
+ 
+END_IF]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

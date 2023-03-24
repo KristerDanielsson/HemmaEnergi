@@ -3,13 +3,16 @@
   <POU Name="MAIN" Id="{aeb0ffbd-bfce-412b-af43-72f522b12325}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM MAIN
 VAR
+	//Communicator
+fbCommunicator: AppCommunicator();
+
 	// trigger command execution for Postman-Echo samples
 		bGet10sek, bGet24h,bGetSMHI	: BOOL;
 
 	fbHttpClientEonMaetare			: FB_IotHttpClient :=(sHostName:='connectix_smartmeter.local',   // 192.168.68.61
 								  	bKeepAlive:=TRUE, tConnectionTimeout:=T#20S);
 									
-	fbHttpClientHuset			: FB_IotHttpClient :=(sHostName:='192.168.68.58', //Husets El - Shelly
+	fbHttpClientHuset			: FB_IotHttpClient :=(sHostName:='192.168.68.200', //Husets El - Shelly
 								  	bKeepAlive:=TRUE, tConnectionTimeout:=T#10S);
 		
 	fbHttpClientElpriset			: FB_IotHttpClient :=(sHostName:='elprisetjustnu.se',
@@ -79,12 +82,14 @@ END_VAR
 
 VAR PERSISTENT
 	timIndex: INT;    					 //remanent   //Från 0 till 87000 = 10 år
-	timDataMomentan:ST_timData;  //accumulerar värden som sedan skall skrivas till rätt timme
 	timData: ARRAY[0..87600] OF ST_timData;
 END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[
+
+//Communicator appen
+fbCommunicator(timData:=timData,timIndex:=timIndex);
 
 //SmartMeter, hämta data en gång per 10sekunder
 
@@ -114,12 +119,12 @@ ELSE
 END_IF
 
 IF fbHttpClientEonMaetare.bConfigured THEN 
-		fbHttpGetEonMaetare(timDataMomentan:=timDataMomentan,nettoEffektW:=nettoEffektW,bSend:= bGet10sek, fbClient:=fbHttpClientEonMaetare,bBusy=>bBusyEon);
+		fbHttpGetEonMaetare(timData:=timData,nettoEffektW:=nettoEffektW,bSend:= bGet10sek, fbClient:=fbHttpClientEonMaetare,timIndex:=timIndex,bBusy=>bBusyEon);
 END_IF
 
 //Hemmamätare
 IF fbHttpClientHuset.bConfigured THEN 
-		fbHttpGetHuset(timDataMomentan:=timDataMomentan,bSend:=bGet10sek, fbClient:=fbHttpClientHuset,husEffektW:= husEffektW, bBusy=>bBusyHuset);
+		fbHttpGetHuset(timData:=timData,bSend:=bGet10sek, fbClient:=fbHttpClientHuset, timIndex:=timIndex,husEffektW:= husEffektW, bBusy=>bBusyHuset);
 END_IF
 
 RisingEdge(CLK:= NOT bGet10sek );
@@ -137,17 +142,17 @@ IF  RisingEdge.Q THEN
 	END_IF
 	
 	
-				IF timDataMomentan.leagstaSolEffekt> nettoEffektW THEN
-					timDataMomentan.leagstaSolEffekt:= nettoEffektW;
-				ELSIF timDataMomentan.hoegstaSolEffekt< nettoEffektW THEN
-					timDataMomentan.hoegstaSolEffekt:= nettoEffektW;
+				IF timData[timIndex].leagstaSolEffekt> solEffektW THEN
+					timData[timIndex].leagstaSolEffekt:= solEffektW;
+				ELSIF timData[timIndex].hoegstaSolEffekt< solEffektW THEN
+					timData[timIndex].hoegstaSolEffekt:= solEffektW;
 				END_IF
 
-	timDataMomentan.timPris:= timData[timIndex].timPris;
+	timData[timIndex].timPris:= timData[timIndex].timPris;
 
 	//Räkna ut pengar en gång per sampel (10s)
-	timDataMomentan.sparatSolceller:= timDataMomentan.sparatSolceller + sparadEffektW/144000*(timDataMomentan.timPris+GVL.ElOeverfoeringsAvgiftEonKWh+GVL.EnergiskattKWh+GVL.MomsKWh+GVL.PaaslagMinusRabattKWh);
-	timDataMomentan.avbetalningSolceller:=timDataMomentan.sparatSolceller+timDataMomentan.saaltSolceller;
+	timData[timIndex].sparatSolceller:= timData[timIndex].sparatSolceller + sparadEffektW/144000*(timData[timIndex].timPris+GVL.ElOeverfoeringsAvgiftEonKWh+GVL.EnergiskattKWh+GVL.MomsKWh+GVL.PaaslagMinusRabattKWh);
+	timData[timIndex].avbetalningSolceller:=timData[timIndex].sparatSolceller+timData[timIndex].saaltSolceller;
 END_IF
 
 /////////////////////////////////////////////
@@ -160,7 +165,7 @@ END_IF
 
 
 IF fbHttpClientSMHI.bConfigured THEN 
-	fbHttpGetSMHI(bSend:=bGet24h, fbClient:=fbHttpClientSMHI, timIndex:=timIndex, timDataMomentan:=timDataMomentan, timData:=timData);
+	fbHttpGetSMHI(bSend:=bGet24h, fbClient:=fbHttpClientSMHI, timIndex:=timIndex, timData:=timData, timData:=timData);
 END_IF 
 
 
@@ -213,8 +218,12 @@ IF timme <> timmeloggad THEN
 	timIndex:=timIndex+1;
 	
  //Data som skall in i struct
-	timDataMomentan.DatumTid:=datumTimmeDT;
-	LoggaTimData();
+	timData[timIndex].DatumTid:=datumTimmeDT;
+	
+	//Flytta över accumulerad data från förra timmen
+	timData[timIndex].avbetalningSolceller:=timData[timIndex-1].avbetalningSolceller;  //Skall inte nollställas
+	timData[timIndex].sparatSolceller:=timData[timIndex-1].sparatSolceller;  //Skall inte nollställas
+	timData[timIndex].saaltSolceller:=timData[timIndex-1].saaltSolceller;  //Skall inte nollställas
 ELSE
 	bWritePersistent:= FALSE;
 END_IF
@@ -228,96 +237,5 @@ END_IF
 
 ]]></ST>
     </Implementation>
-    <Method Name="HaemtaOchManipuleraTider" Id="{c5c0a27f-4ae9-4949-8126-d40f2dbc816a}">
-      <Declaration><![CDATA[METHOD HaemtaOchManipuleraTider : BOOL
-VAR_INPUT
-END_VAR
-]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[
-
-//Detta FB andvänds inte just nu
-
-fbGetsytstemtime(timeLoDW=> filetime.dwLowDateTime, timeHiDW=> filetime.dwHighDateTime);
-systemtid:= FILETIME_TO_DT(filetime);
-stringTid:= DT_TO_STRING(systemtid);
-
-//timme
-stringTimme:=MID(stringTid, 2, 15);
-timme:= STRING_TO_INT(stringTimme);
-
-//Data som skall in i struct
-timDataMomentan.DatumTid:=systemtid;
-
-]]></ST>
-      </Implementation>
-    </Method>
-    <Method Name="LoggaTimData" Id="{6d1a6346-5045-4466-888c-511f03431295}">
-      <Declaration><![CDATA[METHOD LoggaTimData : BOOL
-VAR_INPUT
-END_VAR
-
-VAR
-
-END_VAR]]></Declaration>
-      <Implementation>
-        <ST><![CDATA[
-
-	
-	timData[timIndex].DatumTid:=timDataMomentan.DatumTid;
-	
-	//timData[timIndex].timPris:= timDataMomentan.timPris;   Kommer från FB:t som hämtar Elpriser
-	
-	timData[timIndex].nettoEnergi:=timDataMomentan.nettoEnergi;   //Energi in eller ut till nätet.  //klar
-	timDataMomentan.nettoEnergi:=0;
-	
-	timData[timIndex].saaldEnergi:=timDataMomentan.saaldEnergi;    //klar
-	timDataMomentan.saaldEnergi:=0;
-	
-	timData[timIndex].KoeptEnergi:=timDataMomentan.KoeptEnergi;   //klar
-	timDataMomentan.KoeptEnergi:=0;
-	
-	timData[timIndex].toppNettoEffekt:=timDataMomentan.toppNettoEffekt;    //klar
-	timDataMomentan.toppNettoEffekt:=0;
-	
-	timData[timIndex].laegstaNettoEffekt:=timDataMomentan.laegstaNettoEffekt;    //klar
-	timDataMomentan.laegstaNettoEffekt:=0;
-	
-	
-	timData[timIndex].leagstaSolEffekt:=timDataMomentan.leagstaSolEffekt;    //klar
-	timDataMomentan.leagstaSolEffekt:=0;
-	
-	timData[timIndex].hoegstaSolEffekt:=timDataMomentan.hoegstaSolEffekt;     //klar
-	timDataMomentan.hoegstaSolEffekt:=0;
-	
-	timData[timIndex].leagstaHusEffekt:=timDataMomentan.leagstaHusEffekt;    //klar
-	timDataMomentan.leagstaHusEffekt:=0;
-	
-	timData[timIndex].hoegstaHusEffekt:=timDataMomentan.hoegstaHusEffekt;     //klar
-	timDataMomentan.hoegstaHusEffekt:=0;
-	
-	timData[timIndex].avbetalningSolceller:=timDataMomentan.avbetalningSolceller;  //Skall inte nollställas
-
-	
-	timData[timIndex].sparatSolceller:=timDataMomentan.sparatSolceller;  //Skall inte nollställas
-
-	
-	timData[timIndex].saaltSolceller:=timDataMomentan.saaltSolceller;  //Skall inte nollställas
-	
-	timData[timIndex].HusetEnergi:= timDataMomentan.HusetEnergi;  //accumulerad 1 timme
-	timDataMomentan.HusetEnergi:=0;
-	
-
-	
-
-
-
-
-
-
-
-]]></ST>
-      </Implementation>
-    </Method>
   </POU>
 </TcPlcObject>
